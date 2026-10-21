@@ -46,6 +46,23 @@ public sealed class RelayCommand : ICommand
         Avalonia.Threading.Dispatcher.UIThread.Post(() => live.ForEach(c => c.RaiseCanExecuteChanged()));
     }
 
+    static int _pending;
+
+    /// <summary>
+    /// <see cref="RaiseAll"/> once for any number of calls close together. WPF asks every command again after each bit of
+    /// input and the view models count on that, so the window calls this on every change and every click.
+    /// </summary>
+    public static void RequeryLater()
+    {
+        if (Interlocked.Exchange(ref _pending, 1) == 1)
+            return;
+        Avalonia.Threading.DispatcherTimer.RunOnce(() =>
+        {
+            Volatile.Write(ref _pending, 0);
+            RaiseAll();
+        }, TimeSpan.FromMilliseconds(30));
+    }
+
     public bool CanExecute(object? parameter) => canRun?.Invoke(parameter) ?? true;
 
     public void Execute(object? parameter) => run(parameter);

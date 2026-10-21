@@ -52,6 +52,10 @@ public partial class MainWindow : Window
             Avalonia.Automation.AutomationProperties.SetName(button, button.Content as string ?? page);
         }
         vm.NavigateRequested += ShowPage;
+        // WPF asks every command whether it can run again after each bit of input; Avalonia only when told.
+        vm.PropertyChanged += (_, _) => RelayCommand.RequeryLater();
+        AddHandler(PointerReleasedEvent, (_, _) => RelayCommand.RequeryLater(), handledEventsToo: true);
+        AddHandler(KeyUpEvent, (_, _) => RelayCommand.RequeryLater(), handledEventsToo: true);
         ShowPage("status");
 
         // Chrome: drag by the top strip, resize by the edges, double-click to maximize.
