@@ -22,6 +22,7 @@ public static class Program
             case "--selftest-hotkeys": return SelfTests.Hotkeys();
             case "--selftest-foreground": return SelfTests.Foreground();
             case "--selftest-share-site": return SiteSelfTest.Run(args);
+            case "--captions": return Kairos.Engine.Captions.CaptionProcess.Helper(args);
             case "--settings":
                 if (Environment.GetEnvironmentVariable("KAIROS_UILOG") == "1")
                     System.Diagnostics.Trace.Listeners.Add(new System.Diagnostics.ConsoleTraceListener(useErrorStream: true)); // Avalonia's warnings (failed bindings)

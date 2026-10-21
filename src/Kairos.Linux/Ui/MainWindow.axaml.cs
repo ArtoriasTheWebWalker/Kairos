@@ -89,8 +89,7 @@ public partial class MainWindow : Window
         PictureLayer.Neighbor = _clips.NextPicture;
         _clips.VideoRequested += clip =>
         {
-            Engine.ObsLog.Info($"video requested: {clip.Path}");
-            try { VideoLayer.Show(clip); Engine.ObsLog.Info("viewer shown"); }
+            try { VideoLayer.Show(clip); }
             catch (Exception e) { Engine.ObsLog.Error("viewer: " + e); }
         };
         VideoLayer.ShareRequested += clip => _share.Open(clip.Path, clip.Thumbnail);
