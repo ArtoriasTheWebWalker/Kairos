@@ -26,12 +26,9 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = vm;
         LibraryBar.DataContext = _clips; // the Library's chosen clips
-        // The built-in player, viewer and share panel are not ported yet: these open the system's own apps.
-        _clips.VideoRequested += clip => OpenOutside(clip.Path);
-        _clips.PictureRequested += clip => OpenOutside(clip.Path);
+        // The share panel is not ported yet: Share shows the file in the file manager.
         _clips.ShareRequested += clip => ShowInFolder(clip.Path);
         _vm.ShareRequested += path => ShowInFolder(path);
-        _vm.PictureRequested += path => OpenOutside(path);
         Title = Text.Get("app");
         Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://kairos/Assets/icons/kairos-256.png")));
         Wordmark.Source = new Bitmap(AssetLoader.Open(new Uri($"avares://kairos/Ui/Assets/wordmark-{(Text.IsArabic ? "ar" : "en")}.png")));
@@ -62,6 +59,31 @@ public partial class MainWindow : Window
             };
             Avalonia.Automation.AutomationProperties.SetName(button, button.Content as string ?? page);
         }
+        // Screenshots in the window's own viewer, videos in its own player
+        _clips.PictureRequested += ShowPicture;
+        _vm.PictureRequested += path => ShowPicture(PictureItem(path));
+        PictureLayer.ShareRequested += clip => ShowInFolder(clip.Path);
+        PictureLayer.ShowRequested += clip => _clips.ShowCommand.Execute(clip);
+        PictureLayer.DeleteRequested += clip => _clips.DeleteCommand.Execute(clip);
+        PictureLayer.Neighbor = _clips.NextPicture;
+        _clips.VideoRequested += clip =>
+        {
+            Engine.ObsLog.Info($"video requested: {clip.Path}");
+            try { VideoLayer.Show(clip); Engine.ObsLog.Info("viewer shown"); }
+            catch (Exception e) { Engine.ObsLog.Error("viewer: " + e); }
+        };
+        VideoLayer.ShareRequested += clip => ShowInFolder(clip.Path);
+        VideoLayer.ShowRequested += clip => _clips.ShowCommand.Execute(clip);
+        VideoLayer.DeleteRequested += clip => _clips.DeleteCommand.Execute(clip);
+        Closed += (_, _) => VideoLayer.Hide();
+        // A clip or screenshot saved while the Library is open shows at once, marked new.
+        _vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(SettingsViewModel.LastClipPath) or null)
+                OnLastClip(_vm.LastClipPath);
+            if (e.PropertyName is nameof(SettingsViewModel.LastShotPath) or null)
+                OnLastShot(_vm.LastShotPath);
+        };
         vm.NavigateRequested += ShowPage;
         // WPF asks every command whether it can run again after each bit of input; Avalonia only when told.
         vm.PropertyChanged += (_, _) => RelayCommand.RequeryLater();
@@ -93,16 +115,50 @@ public partial class MainWindow : Window
         CloseButton.Click += (_, _) => Close();
     }
 
-    static void OpenOutside(string path)
-    {
-        if (File.Exists(path))
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("xdg-open", [path]) { UseShellExecute = false });
-    }
-
     static void ShowInFolder(string path)
     {
         if (File.Exists(path))
             System.Diagnostics.Process.Start(ShellPaths.ShowInFolder(path));
+    }
+
+    /// <summary>Shows the screenshot in the window's own viewer.</summary>
+    public void ShowPicture(ClipItem picture) => PictureLayer.Show(picture);
+
+    /// <summary>The Library's card for a picture, or one made for it when the page has not listed it yet.</summary>
+    ClipItem PictureItem(string path)
+    {
+        var known = _clips.Items.FirstOrDefault(c => string.Equals(c.Path, path, StringComparison.Ordinal));
+        if (known != null)
+            return known;
+        var file = new FileInfo(path);
+        return new ClipItem
+        {
+            Path = path, Name = Path.GetFileNameWithoutExtension(path), App = Engine.ClipLibrary.GroupOf(_vm.EffectiveFolder, path),
+            Time = file.Exists ? file.LastWriteTime : DateTime.Now, Size = file.Exists ? file.Length : 0, Kind = Engine.ClipKind.Picture,
+        };
+    }
+
+    string? _lastClip, _lastShot;
+
+    /// <summary>A clip or recording was saved while the Library is open: only what changed on disk is added.</summary>
+    void OnLastClip(string? path)
+    {
+        if (string.Equals(path, _lastClip, StringComparison.Ordinal))
+            return;
+        bool first = _lastClip == null;
+        _lastClip = path;
+        if (!first && _current == "clips")
+            _clips.Refresh(live: true);
+    }
+
+    /// <summary>A screenshot taken while the Library is open shows at once, like a clip.</summary>
+    void OnLastShot(string? path)
+    {
+        if (string.Equals(path, _lastShot, StringComparison.Ordinal))
+            return;
+        _lastShot = path;
+        if (path != null && _current == "clips")
+            _clips.Refresh(live: true);
     }
 
     void ToggleMaximize() => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;

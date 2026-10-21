@@ -22,6 +22,8 @@ public static class Program
             case "--selftest-hotkeys": return SelfTests.Hotkeys();
             case "--selftest-foreground": return SelfTests.Foreground();
             case "--settings":
+                if (Environment.GetEnvironmentVariable("KAIROS_UILOG") == "1")
+                    System.Diagnostics.Trace.Listeners.Add(new System.Diagnostics.ConsoleTraceListener(useErrorStream: true)); // Avalonia's warnings (failed bindings)
                 KairosApp.ThemeEnabled = true;
                 return Ui.SettingsApp.Run();
             case "--write-icon":

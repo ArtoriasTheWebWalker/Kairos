@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:l="clr-namespace:Kairos.Ui"
+        xmlns:e="clr-namespace:Kairos.Ui.Edit"
         x:Class="Kairos.Ui.MainWindow"
         Width="1100" Height="700" MinWidth="860" MinHeight="580"
         WindowStartupLocation="CenterScreen"
@@ -48,7 +49,7 @@
             <Border Name="DragBar" Grid.Column="1" Background="Transparent" VerticalAlignment="Top" Height="40"/>
 
             <!-- Window buttons -->
-            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" ZIndex="20">
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" ZIndex="40">
                 <Button Classes="Caption" Name="MinButton" AutomationProperties.Name="Minimize">
                     <Path Data="M0,5 L10,5" Stroke="{Binding $parent[Button].Foreground}" StrokeThickness="1"/>
                 </Button>
@@ -150,6 +151,10 @@
                     </DockPanel>
                 </Border>
             </Grid>
+
+            <!-- The viewers, over everything but the window's own buttons -->
+            <l:PictureViewer x:Name="PictureLayer" Grid.RowSpan="2" Grid.ColumnSpan="2" ZIndex="9" IsVisible="False"/>
+            <e:VideoViewer x:Name="VideoLayer" Grid.RowSpan="2" Grid.ColumnSpan="2" ZIndex="9" IsVisible="False"/>
 
             <!-- Edges for resizing (the window has no frame of its own) -->
             <Border Name="EdgeLeft" Grid.RowSpan="2" HorizontalAlignment="Left" Width="5" Background="Transparent" Cursor="SizeWestEast" ZIndex="30"/>

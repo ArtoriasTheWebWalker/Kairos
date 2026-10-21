@@ -664,7 +664,7 @@ public sealed class EngineApp
                 {
                     // The settings window closes itself on SIGTERM, as its own X would.
                     if (process.Id != Environment.ProcessId && ForegroundApp.CommandLine(process.Id).Contains("--settings"))
-                        process.Kill(entireProcessTree: false);
+                        Process.Start(new ProcessStartInfo("kill", ["-TERM", process.Id.ToString()]) { UseShellExecute = false })?.Dispose();
                 }
                 catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception)
                 {

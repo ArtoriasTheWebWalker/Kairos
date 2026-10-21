@@ -26,9 +26,13 @@ public static class SettingsApp
         Engine.ObsLog.Open(Path.Combine(SettingsStore.AppDataDir, "logs"), "settings");
         Resilience.InstallHandlers();
         PowerEvents.Start();
-
-        SettingsViewModel? vm = null;
         MainWindow? window = null;
+        // A logout, or the engine leaving, ends this window as its own close button would (the signal is otherwise swallowed).
+        PowerEvents.SessionEnding += () => UiThread.Post(() => window?.Close());
+
+        // Self-tests on a PC someone is using play silence.
+        Edit.PlayerSession.Muted = Environment.GetEnvironmentVariable("KAIROS_MUTE") == "1";
+        SettingsViewModel? vm = null;
         bool swapping = false;
         IClassicDesktopStyleApplicationLifetime? lifetime = null;
 

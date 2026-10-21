@@ -47,6 +47,6 @@ public sealed class KairosApp : Application
     /// Draw with the CPU. The engine does: libobs owns the GPU's EGL in that process, and a second GL user there ended it
     /// the first time the toast appeared; a tray icon and a small card need no GPU anyway.
     /// </param>
-    public static AppBuilder Build(bool software) => AppBuilder.Configure<KairosApp>().UsePlatformDetect().LogToTrace()
+    public static AppBuilder Build(bool software) => AppBuilder.Configure<KairosApp>().UsePlatformDetect().LogToTrace(Avalonia.Logging.LogEventLevel.Warning)
         .With(new X11PlatformOptions { RenderingMode = software ? [X11RenderingMode.Software] : [X11RenderingMode.Glx, X11RenderingMode.Egl, X11RenderingMode.Software] });
 }

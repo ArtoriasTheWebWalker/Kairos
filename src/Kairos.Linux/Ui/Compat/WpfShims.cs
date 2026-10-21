@@ -67,13 +67,47 @@ namespace System.Windows.Media.Imaging
         /// <summary>A picture from 32-bit BGRA rows (what the engine's frame grabber returns).</summary>
         public static BitmapSource FromBgra(byte[] bgra, int width, int height)
         {
-            var bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Opaque);
+            var bitmap = new Avalonia.Media.Imaging.WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), Avalonia.Platform.PixelFormat.Bgra8888, AlphaFormat.Opaque);
             using (var locked = bitmap.Lock())
                 System.Runtime.InteropServices.Marshal.Copy(bgra, 0, locked.Address, Math.Min(bgra.Length, locked.RowBytes * height));
             return new BitmapSource(bitmap);
         }
 
         public void Dispose() => _bitmap.Dispose();
+    }
+
+    /// <summary>A picture a player draws into frame by frame (WPF's WriteableBitmap, BGRA only).</summary>
+    public sealed class WriteableBitmap : IImage
+    {
+
+        readonly Avalonia.Media.Imaging.WriteableBitmap _bitmap;
+
+        public WriteableBitmap(int width, int height, double dpiX, double dpiY, System.Windows.Media.PixelFormat format, object? palette) =>
+            _bitmap = new Avalonia.Media.Imaging.WriteableBitmap(new PixelSize(width, height), new Vector(dpiX, dpiY), Avalonia.Platform.PixelFormat.Bgra8888, AlphaFormat.Premul);
+
+        public Avalonia.Size Size => _bitmap.Size;
+
+        public Avalonia.Media.Imaging.WriteableBitmap Bitmap => _bitmap;
+
+        public void Draw(DrawingContext context, Avalonia.Rect sourceRect, Avalonia.Rect destRect) => ((IImage)_bitmap).Draw(context, sourceRect, destRect);
+
+        /// <summary>Copies <paramref name="rect"/> worth of BGRA rows (<paramref name="stride"/> bytes apart) in.</summary>
+        public void WritePixels(System.Windows.Int32Rect rect, byte[] pixels, int stride, int offset)
+        {
+            using var locked = _bitmap.Lock();
+            for (int y = 0; y < rect.Height; y++)
+                System.Runtime.InteropServices.Marshal.Copy(pixels, offset + y * stride, locked.Address + (rect.Y + y) * locked.RowBytes + rect.X * 4, rect.Width * 4);
+        }
+    }
+}
+
+namespace System.Windows.Media
+{
+    public readonly record struct PixelFormat(string Name);
+
+    public static class PixelFormats
+    {
+        public static PixelFormat Bgra32 { get; } = new("Bgra32");
     }
 }
 
