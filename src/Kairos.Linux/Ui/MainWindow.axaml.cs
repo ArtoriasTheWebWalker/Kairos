@@ -13,6 +13,9 @@ public partial class MainWindow : Window
 {
     readonly SettingsViewModel _vm;
     readonly ClipsViewModel _clips;
+    readonly ShareViewModel _share;
+    readonly LinuxShareHost _shareHost;
+    ShareOverlay? _shareLayer;
     ClipsPage? _clipsPage;
     readonly Dictionary<string, Func<Control>> _pages;
     string? _current;
@@ -22,12 +25,22 @@ public partial class MainWindow : Window
     public MainWindow(SettingsViewModel vm)
     {
         _vm = vm;
+        _shareHost = new LinuxShareHost(vm.RememberShare);
+        _share = new ShareViewModel(_shareHost, () => vm.SharePrefs);
         _clips = new ClipsViewModel(() => _vm.EffectiveFolder, () => _vm.HkSave, () => _vm.HkScreenshot);
         InitializeComponent();
         DataContext = vm;
         LibraryBar.DataContext = _clips; // the Library's chosen clips
-        // The share panel is not ported yet: Share shows the file in the file manager.
-        _clips.ShareRequested += clip => ShowInFolder(clip.Path);
+        _share.PropertyChanged += (_, _) => RelayCommand.RequeryLater();
+        _share.PropertyChanged += (_, _) =>
+        {
+            if (_share.IsOpen)
+                GC.KeepAlive(ShareLayer);
+            ShareHost.IsVisible = _share.IsOpen;
+        };
+        _clips.ShareRequested += clip => _share.Open(clip.Path, clip.Thumbnail);
+        _share.EditRequested += path => OpenEditor(path, Engine.ClipOrganizer.IsPicture(path), Edit.EditorMode.Share);
+        Closed += (_, _) => _share.Close();
         _vm.ShareRequested += path => ShowInFolder(path);
         Title = Text.Get("app");
         Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://kairos/Assets/icons/kairos-256.png")));
@@ -62,7 +75,7 @@ public partial class MainWindow : Window
         // Screenshots in the window's own viewer, videos in its own player
         _clips.PictureRequested += ShowPicture;
         _vm.PictureRequested += path => ShowPicture(PictureItem(path));
-        PictureLayer.ShareRequested += clip => ShowInFolder(clip.Path);
+        PictureLayer.ShareRequested += clip => _share.Open(clip.Path, clip.Thumbnail);
         PictureLayer.ShowRequested += clip => _clips.ShowCommand.Execute(clip);
         PictureLayer.DeleteRequested += clip => _clips.DeleteCommand.Execute(clip);
         PictureLayer.Neighbor = _clips.NextPicture;
@@ -72,7 +85,7 @@ public partial class MainWindow : Window
             try { VideoLayer.Show(clip); Engine.ObsLog.Info("viewer shown"); }
             catch (Exception e) { Engine.ObsLog.Error("viewer: " + e); }
         };
-        VideoLayer.ShareRequested += clip => ShowInFolder(clip.Path);
+        VideoLayer.ShareRequested += clip => _share.Open(clip.Path, clip.Thumbnail);
         VideoLayer.ShowRequested += clip => _clips.ShowCommand.Execute(clip);
         VideoLayer.DeleteRequested += clip => _clips.DeleteCommand.Execute(clip);
         Closed += (_, _) => VideoLayer.Hide();
@@ -81,7 +94,7 @@ public partial class MainWindow : Window
         _jobs = new Edit.EditJobs(RenderEdit, path => App.RecycleBin.Send(path, App.RecycleBin.UserFlags));
         Closed += (_, _) => _jobs.CancelAll();
         // An update closes this window only when nothing here would be lost.
-        _vm.InUse = () => _editor != null || _jobs.Busy;
+        _vm.InUse = () => _editor != null || _share.IsOpen || _jobs.Busy;
         // A clip or screenshot saved while the Library is open shows at once, marked new.
         _vm.PropertyChanged += (_, e) =>
         {
@@ -125,6 +138,30 @@ public partial class MainWindow : Window
     {
         if (File.Exists(path))
             System.Diagnostics.Process.Start(ShellPaths.ShowInFolder(path));
+    }
+
+    /// <summary>The share panel, built on first use.</summary>
+    ShareOverlay ShareLayer
+    {
+        get
+        {
+            if (_shareLayer == null)
+            {
+                _shareLayer = new ShareOverlay { DataContext = _share };
+                ShareHost.Content = _shareLayer;
+                _shareHost.Frame += () => _shareLayer.PreviewPicture.InvalidateVisual();
+            }
+            return _shareLayer;
+        }
+    }
+
+    /// <summary>Opens the share panel for a clip (the tray's "Share last clip" lands here).</summary>
+    public ShareViewModel ShowShare(string clipPath)
+    {
+        ShowPage("clips");
+        var item = _clips.Items.FirstOrDefault(c => string.Equals(c.Path, clipPath, StringComparison.Ordinal));
+        _share.Open(clipPath, item?.Thumbnail);
+        return _share;
     }
 
     Edit.EditorView? _editor;
@@ -242,6 +279,7 @@ public partial class MainWindow : Window
         {
             VideoLayer.Hide();
             PictureLayer.Hide();
+            _share.Release();
         });
         vm.BeginSaving(replace, job.Cancel);
         job.ProgressChanged += vm.ReportSaving;
@@ -257,9 +295,14 @@ public partial class MainWindow : Window
                 if (_editor != view)
                     return;
                 CloseEditor();
-                VideoLayer.Hide();
-                PictureLayer.Hide();
-                ShowPage("clips");
+                if (mode == Edit.EditorMode.Share)
+                    _share.UseSaved(saved, project.Source);
+                else
+                {
+                    VideoLayer.Hide();
+                    PictureLayer.Hide();
+                    ShowPage("clips");
+                }
             };
             back.Start();
         };

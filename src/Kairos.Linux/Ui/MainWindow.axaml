@@ -155,6 +155,8 @@
             <!-- The viewers, over everything but the window's own buttons -->
             <l:PictureViewer x:Name="PictureLayer" Grid.RowSpan="2" Grid.ColumnSpan="2" ZIndex="9" IsVisible="False"/>
             <e:VideoViewer x:Name="VideoLayer" Grid.RowSpan="2" Grid.ColumnSpan="2" ZIndex="9" IsVisible="False"/>
+            <!-- The share panel, over the Library and the viewers -->
+            <ContentControl x:Name="ShareHost" Grid.RowSpan="2" Grid.ColumnSpan="2" ZIndex="12" IsVisible="False" Focusable="False"/>
             <!-- The editor: over the viewers, under the window's own buttons -->
             <ContentControl x:Name="EditorLayer" Grid.RowSpan="2" Grid.ColumnSpan="2" ZIndex="10" IsVisible="False"/>
 

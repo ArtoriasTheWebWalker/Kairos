@@ -57,19 +57,25 @@ public sealed class LinuxShareHost(Action<ShareSettings> remember) : IShareHost
     public void CopyPicture(string path) => PictureClipboard.Copy(path);
 
     /// <summary>The file (as a file, so a paste in a file manager or a chat window gets it) and/or text on the clipboard.</summary>
-    public void CopyToClipboard(string? file, string? text)
+    public void CopyToClipboard(string? file, string? text) => _ = CopyAsync(file, text);
+
+    async Task CopyAsync(string? file, string? text)
     {
         var window = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Windows.FirstOrDefault();
         if (window?.Clipboard is not { } clipboard)
+        {
+            Engine.ObsLog.Warn("share clipboard: none");
             return;
+        }
         try
         {
             var data = new DataTransfer();
-            if (file != null && window.StorageProvider.TryGetFileFromPathAsync(new Uri(file)).GetAwaiter().GetResult() is { } item)
+            if (file != null && await window.StorageProvider.TryGetFileFromPathAsync(new Uri(file)) is { } item)
                 data.Add(DataTransferItem.CreateFile(item));
             if (!string.IsNullOrEmpty(text))
                 data.Add(DataTransferItem.CreateText(text));
-            clipboard.SetDataAsync(data).GetAwaiter().GetResult();
+            await clipboard.SetDataAsync(data);
+            Engine.ObsLog.Info("share clipboard: set " + file);
         }
         catch (Exception e) when (e is IOException or InvalidOperationException or UriFormatException)
         {

@@ -37,7 +37,8 @@ public static class PictureClipboard
             if (clipboard == null)
                 return false;
             using var stream = File.OpenRead(path);
-            clipboard.SetBitmapAsync(new Bitmap(stream)).GetAwaiter().GetResult();
+            var bitmap = new Bitmap(stream);
+            _ = clipboard.SetBitmapAsync(bitmap); // not waited for: on the UI thread that would never return
             return true;
         }
         catch (Exception e) when (e is IOException or InvalidOperationException)

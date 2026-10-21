@@ -112,3 +112,47 @@ public sealed class EqualsVisibleConverter : IValueConverter
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => BindingOperations.DoNothing;
 }
+
+/// <summary>The share panel's caption direction (the view model answers in WPF's FlowDirection).</summary>
+public sealed class FlowConverter : Avalonia.Data.Converters.IValueConverter
+{
+    public static readonly FlowConverter Instance = new();
+
+    public object? Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture) =>
+        value is System.Windows.FlowDirection.RightToLeft ? Avalonia.Media.FlowDirection.RightToLeft : Avalonia.Media.FlowDirection.LeftToRight;
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture) => throw new NotSupportedException();
+}
+
+/// <summary>An emoji's colour picture (Ui/Assets/Emoji, named by code points).</summary>
+public sealed class EmojiImageConverter : Avalonia.Data.Converters.IValueConverter
+{
+    public static readonly EmojiImageConverter Instance = new();
+    static readonly Dictionary<string, Avalonia.Media.Imaging.Bitmap?> Cache = [];
+
+    public object? Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
+    {
+        if (value is not EmojiPick pick)
+            return null;
+        if (!Cache.TryGetValue(pick.File, out var bitmap))
+        {
+            try { bitmap = new Avalonia.Media.Imaging.Bitmap(Avalonia.Platform.AssetLoader.Open(new Uri("avares://kairos/Ui/Assets/Emoji/" + pick.File))); }
+            catch (Exception e) when (e is IOException or UriFormatException) { bitmap = null; }
+            Cache[pick.File] = bitmap;
+        }
+        return bitmap;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture) => throw new NotSupportedException();
+}
+
+/// <summary>A platform's round logo.</summary>
+public sealed class PlatformLogoConverter : Avalonia.Data.Converters.IValueConverter
+{
+    public static readonly PlatformLogoConverter Instance = new();
+
+    public object? Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture) =>
+        value == null ? null : new Avalonia.Media.Imaging.Bitmap(Avalonia.Platform.AssetLoader.Open(new Uri($"avares://kairos/Ui/Assets/{value.ToString()!.ToLowerInvariant()}.png")));
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture) => throw new NotSupportedException();
+}
