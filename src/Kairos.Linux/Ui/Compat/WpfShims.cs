@@ -16,6 +16,26 @@ namespace System.Windows
 
         public IResourceDictionary Resources => Avalonia.Application.Current!.Resources;
     }
+
+    public enum FlowDirection
+    {
+        LeftToRight,
+        RightToLeft,
+    }
+
+    public enum GridUnitType
+    {
+        Auto,
+        Pixel,
+        Star,
+    }
+
+    /// <summary>A grid column's share (the share panel's crop frame); a column takes it as an Avalonia length.</summary>
+    public readonly record struct GridLength(double Value, GridUnitType GridUnitType)
+    {
+        public static implicit operator Avalonia.Controls.GridLength(GridLength length) =>
+            new(length.Value, length.GridUnitType switch { GridUnitType.Pixel => Avalonia.Controls.GridUnitType.Pixel, GridUnitType.Star => Avalonia.Controls.GridUnitType.Star, _ => Avalonia.Controls.GridUnitType.Auto });
+    }
 }
 
 namespace System.Windows.Threading
