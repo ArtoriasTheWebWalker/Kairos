@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     readonly ClipsViewModel _clips;
     readonly ShareViewModel _share;
     readonly LinuxShareHost _shareHost;
+    readonly ConnectionsViewModel _connections;
     ShareOverlay? _shareLayer;
     ClipsPage? _clipsPage;
     readonly Dictionary<string, Func<Control>> _pages;
@@ -25,6 +26,7 @@ public partial class MainWindow : Window
     public MainWindow(SettingsViewModel vm)
     {
         _vm = vm;
+        _connections = new ConnectionsViewModel(new LinuxAccountsHost());
         _shareHost = new LinuxShareHost(vm.RememberShare);
         _share = new ShareViewModel(_shareHost, () => vm.SharePrefs);
         _clips = new ClipsViewModel(() => _vm.EffectiveFolder, () => _vm.HkSave, () => _vm.HkScreenshot);
@@ -41,6 +43,7 @@ public partial class MainWindow : Window
         _clips.ShareRequested += clip => _share.Open(clip.Path, clip.Thumbnail);
         _share.EditRequested += path => OpenEditor(path, Engine.ClipOrganizer.IsPicture(path), Edit.EditorMode.Share);
         Closed += (_, _) => _share.Close();
+        Closed += (_, _) => ShareSites.Shutdown();
         _vm.ShareRequested += path => ShowInFolder(path);
         Title = Text.Get("app");
         Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://kairos/Assets/icons/kairos-256.png")));
@@ -57,6 +60,11 @@ public partial class MainWindow : Window
             ["audio"] = () => new AudioPage(),
             ["hotkeys"] = () => new HotkeysPage(),
             ["voice"] = () => new SmartSavePage(),
+            ["connections"] = () =>
+            {
+                _ = _connections.Refresh();
+                return new ConnectionsPage { DataContext = _connections };
+            },
             ["general"] = () => new GeneralPage(),
         };
         foreach (var (button, page) in new (RadioButton, string)[]

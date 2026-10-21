@@ -89,3 +89,5 @@ public partial class ClipsPage : UserControl
             vm.LoadMore();
     }
 }
+
+public partial class ConnectionsPage : UserControl { public ConnectionsPage() => InitializeComponent(); }
