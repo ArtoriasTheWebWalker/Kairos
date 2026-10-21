@@ -27,6 +27,10 @@ s = s.replace("\ncheck_obs_browser()\n", "\n").replace("\ncheck_obs_websocket()\
 open(p, "w").write(s)
 PY
 
+# Kairos's own change to OBS: FFmpeg's fast AAC coder (about half the audio CPU of the default; see the patch's comment).
+git -C "$SRC" apply --check "$(dirname "$0")/patches/obs-aac-fast-coder.patch" 2>/dev/null &&
+  git -C "$SRC" apply "$(dirname "$0")/patches/obs-aac-fast-coder.patch"
+
 # Header-only dependencies that are not worth a system package: use a local copy when the system has none.
 EXTRA=()
 [ -e /usr/share/ECM/cmake/ECMConfig.cmake ] || EXTRA+=("-DECM_DIR=${ECM_DIR:?install extra-cmake-modules or set ECM_DIR}")
