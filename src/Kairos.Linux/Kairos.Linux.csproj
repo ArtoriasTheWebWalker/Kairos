@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <Compile Include="$(WinSrc)Engine\**\*.cs" Exclude="$(WinSrc)Engine\SelfTest.cs;$(WinSrc)Engine\Share\PictureJpeg.cs;$(WinSrc)Engine\ScreenshotWriter.cs;$(WinSrc)Engine\CaptureBackend.cs" LinkBase="Engine" />
-    <Compile Include="$(WinSrc)Settings\**\*.cs;$(WinSrc)AppInfo.cs;$(WinSrc)InlineProgress.cs;$(WinSrc)App\Text.cs;$(WinSrc)App\HotkeyParser.cs;$(WinSrc)App\HotkeyDefaults.cs;$(WinSrc)App\Ipc.cs;$(WinSrc)App\ClipIndex.cs;$(WinSrc)App\ShareRequest.cs;$(WinSrc)App\StorageJanitor.cs;$(WinSrc)App\TakenKeyNotice.cs;$(WinSrc)App\InstallChoices.cs;$(WinSrc)App\ClipDeleter.cs;$(WinSrc)App\Chime.cs;$(WinSrc)App\ShotSound.cs;$(WinSrc)Ui\StatusLogic.cs" />
+    <Compile Include="$(WinSrc)Settings\**\*.cs;$(WinSrc)AppInfo.cs;$(WinSrc)InlineProgress.cs;$(WinSrc)App\Text.cs;$(WinSrc)App\HotkeyParser.cs;$(WinSrc)App\HotkeyDefaults.cs;$(WinSrc)App\Ipc.cs;$(WinSrc)App\ClipIndex.cs;$(WinSrc)App\ShareRequest.cs;$(WinSrc)App\StorageJanitor.cs;$(WinSrc)App\TakenKeyNotice.cs;$(WinSrc)App\InstallChoices.cs;$(WinSrc)App\ClipDeleter.cs;$(WinSrc)App\Chime.cs;$(WinSrc)App\ShotSound.cs;$(WinSrc)Ui\StatusLogic.cs;$(WinSrc)Ui\SettingsViewModel.cs;$(WinSrc)App\ObsHotkeys.cs;$(WinSrc)Ui\ClipsViewModel.cs;$(WinSrc)Ui\KeyState.cs" />
     <Compile Include="$(WinSrc)Native\**\*.cs" LinkBase="Native" />
     <Compile Include="**\*.cs" Exclude="obj\**;bin\**" />
     <EmbeddedResource Include="$(WinSrc)App\Lang\*.json" LogicalName="Lang.%(Filename).json" />
