@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The Linux build links the portable sources of ..\Kairos instead of moving them, so the Windows app is untouched
+       and upstream changes merge cleanly. Windows-only files are replaced by their Linux counterparts in this folder. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <AssemblyName>kairos</AssemblyName>
+    <RootNamespace>Kairos</RootNamespace>
+    <Version>1.0.1</Version>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <WinSrc>$(MSBuildThisFileDirectory)..\Kairos\</WinSrc>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(WinSrc)Engine\**\*.cs" Exclude="$(WinSrc)Engine\SelfTest.cs;$(WinSrc)Engine\Share\PictureJpeg.cs;$(WinSrc)Engine\ScreenshotWriter.cs" LinkBase="Engine" />
+    <Compile Include="$(WinSrc)Settings\**\*.cs;$(WinSrc)AppInfo.cs;$(WinSrc)InlineProgress.cs;$(WinSrc)App\Text.cs;$(WinSrc)App\HotkeyParser.cs;$(WinSrc)App\HotkeyDefaults.cs" />
+    <Compile Include="$(WinSrc)Native\**\*.cs" LinkBase="Native" />
+    <Compile Include="**\*.cs" Exclude="obj\**;bin\**" />
+    <EmbeddedResource Include="$(WinSrc)App\Lang\*.json" LogicalName="Lang.%(Filename).json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FFmpeg.AutoGen" Version="8.1.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.30.0" />
+    <PackageReference Include="Velopack" Version="1.2.161" />
+    <PackageReference Include="SkiaSharp" Version="3.119.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.0" />
+  </ItemGroup>
+
+</Project>
