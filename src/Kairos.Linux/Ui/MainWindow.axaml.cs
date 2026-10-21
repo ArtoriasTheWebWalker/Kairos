@@ -76,6 +76,12 @@ public partial class MainWindow : Window
         VideoLayer.ShowRequested += clip => _clips.ShowCommand.Execute(clip);
         VideoLayer.DeleteRequested += clip => _clips.DeleteCommand.Execute(clip);
         Closed += (_, _) => VideoLayer.Hide();
+        VideoLayer.EditRequested += clip => OpenEditor(clip.Path, isPicture: false, Edit.EditorMode.Library);
+        PictureLayer.EditRequested += picture => OpenEditor(picture.Path, isPicture: true, Edit.EditorMode.Library);
+        _jobs = new Edit.EditJobs(RenderEdit, path => App.RecycleBin.Send(path, App.RecycleBin.UserFlags));
+        Closed += (_, _) => _jobs.CancelAll();
+        // An update closes this window only when nothing here would be lost.
+        _vm.InUse = () => _editor != null || _jobs.Busy;
         // A clip or screenshot saved while the Library is open shows at once, marked new.
         _vm.PropertyChanged += (_, e) =>
         {
@@ -119,6 +125,155 @@ public partial class MainWindow : Window
     {
         if (File.Exists(path))
             System.Diagnostics.Process.Start(ShellPaths.ShowInFolder(path));
+    }
+
+    Edit.EditorView? _editor;
+    readonly Edit.EditJobs _jobs;
+
+    /// <summary>
+    /// Opens the editor on a clip or screenshot. A clip it cannot read (FFmpeg or the file missing) does not open;
+    /// nothing else changes.
+    /// </summary>
+    public Edit.EditorView? OpenEditor(string path, bool isPicture, Edit.EditorMode mode, Edit.ICaptionMaker? captions = null)
+    {
+        Engine.Edit.EditProject start;
+        double aspect;
+        int audioStreams = 0;
+        System.Windows.Media.Imaging.BitmapSource? still;
+        try
+        {
+            if (isPicture)
+            {
+                still = PictureClipboard.TryLoad(path);
+                if (still == null)
+                    return null;
+                aspect = still.PixelWidth / (double)Math.Max(1, still.PixelHeight);
+                start = Engine.Edit.EditProject.For(path, 0);
+            }
+            else
+            {
+                var info = Engine.Share.ClipTranscoder.Probe(path);
+                aspect = info.Width / (double)Math.Max(1, info.Height);
+                audioStreams = info.AudioStreams;
+                start = Engine.Edit.EditProject.For(path, info.Duration);
+                using var grabber = new Engine.Share.FrameGrabber(path);
+                var frame = grabber.Grab(0, 1280, exact: true);
+                still = frame == null ? null : System.Windows.Media.Imaging.BitmapSource.FromBgra(frame.Bgra, frame.Width, frame.Height);
+            }
+        }
+        catch (Exception e) when (e is Engine.Share.ShareException or IOException or InvalidOperationException)
+        {
+            return null;
+        }
+        // Auto captions run Whisper in a hidden Kairos process of their own (kairos --captions).
+        captions ??= new Edit.CaptionMaker(Engine.Captions.CaptionModel.Default, Engine.Captions.CaptionRuntime.Default, Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "kairos"));
+        var vm = new Edit.EditorViewModel(start, isPicture, mode, aspect, audioStreams, captions);
+        var view = new Edit.EditorView(vm);
+        view.SetPicture(still);
+        vm.Closed += CloseEditor;
+        view.SaveChosen += replace => SaveFromEditor(view, vm, replace, mode);
+        _editor = view;
+        EditorLayer.Content = view;
+        EditorLayer.IsVisible = true;
+        return view;
+    }
+
+    /// <summary>Writes an edit to <paramref name="part"/> (on a background thread; drawing goes to this window's thread).</summary>
+    string RenderEdit(Engine.Edit.EditProject p, string part, IProgress<double> progress, CancellationToken ct)
+    {
+        if (Engine.ClipOrganizer.IsPicture(p.Source))
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Invoke(() => Edit.PictureComposer.Save(p.Source, p, part));
+            return part;
+        }
+        var info = Engine.Share.ClipTranscoder.Probe(p.Source);
+        string overlays = Path.Combine(Path.GetTempPath(), "Kairos", "edit-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            // Each drawn item as a small transparent picture (FFmpeg lays it over in its place and time), one at a time on
+            // the window's thread so the window keeps answering between them.
+            var pngs = new Dictionary<Guid, Engine.Edit.Overlay>();
+            foreach (var item in p.Items.Where(i => i is not Engine.Edit.BlurItem && p.Visible(i).Any()))
+            {
+                ct.ThrowIfCancellationRequested();
+                pngs[item.Id] = Avalonia.Threading.Dispatcher.UIThread.Invoke(() => Edit.ItemRenderer.RenderPng(item, info.Width, info.Height, overlays));
+            }
+            var graph = Engine.Edit.EditGraph.Build(p, info.Width, info.Height, info.Fps, info.AudioStreams, pngs);
+            var codec = info.VideoCodec switch { "av1" => Settings.VideoCodec.Av1, "hevc" => Settings.VideoCodec.Hevc, _ => Settings.VideoCodec.H264 };
+            var plan = Engine.EncoderPresets.Plan(codec, _vm.Quality, info.Width, info.Height, (int)Math.Round(info.Fps), _vm.CustomCq, _vm.CustomMbps,
+                nvencAvailable: true);
+            return Engine.Edit.EditExporter.Export(p.Source, part, graph, plan, progress, ct).Path;
+        }
+        finally
+        {
+            try
+            {
+                if (Directory.Exists(overlays))
+                    Directory.Delete(overlays, recursive: true);
+            }
+            catch (IOException)
+            {
+            }
+        }
+    }
+
+    /// <summary>The process is ending: stops saves and waits briefly for them to remove their part files.</summary>
+    public void FinishEdits() => _jobs.CancelAndWait(TimeSpan.FromSeconds(5));
+
+    /// <summary>
+    /// Saves the edit as the user chose (a new copy, or in place of the original) while the editor stays up with its
+    /// progress; once it is written the editor goes by itself, back to the Library (which shows the new clip). A cancel
+    /// or a failure goes back to editing.
+    /// </summary>
+    void SaveFromEditor(Edit.EditorView view, Edit.EditorViewModel vm, bool replace, Edit.EditorMode mode)
+    {
+        var project = vm.Project;
+        view.Suspend(); // the preview lets go of the clip (replacing it needs that)
+        var job = _jobs.Start(project, replace, releaseSource: () =>
+        {
+            VideoLayer.Hide();
+            PictureLayer.Hide();
+        });
+        vm.BeginSaving(replace, job.Cancel);
+        job.ProgressChanged += vm.ReportSaving;
+        job.Completed += saved =>
+        {
+            vm.FinishSaving();
+            _clips.Refresh(live: true); // the new clip shows as new
+            // A moment for the full ring and its check, then back where the editor came from (nothing to press).
+            var back = new Avalonia.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
+            back.Tick += (_, _) =>
+            {
+                back.Stop();
+                if (_editor != view)
+                    return;
+                CloseEditor();
+                VideoLayer.Hide();
+                PictureLayer.Hide();
+                ShowPage("clips");
+            };
+            back.Start();
+        };
+        job.Failed += why =>
+        {
+            view.Resume();
+            if (why.Length == 0)
+                vm.EndSaving(); // cancelled: back to editing
+            else
+                vm.FailSaving(why);
+        };
+    }
+
+    /// <summary>Closes the editor at once.</summary>
+    internal void CloseEditorNow() => CloseEditor();
+
+    void CloseEditor()
+    {
+        _editor?.Close();
+        _editor = null;
+        EditorLayer.Content = null;
+        _vm.RefreshCaptionModel(); // the editor may have downloaded it
+        EditorLayer.IsVisible = false;
     }
 
     /// <summary>Shows the screenshot in the window's own viewer.</summary>

@@ -22,6 +22,9 @@ namespace System.Windows.Threading
 {
     public sealed class Dispatcher
     {
+        /// <summary>The thread's dispatcher: the UI's (the only one these view models are made on).</summary>
+        public static Dispatcher CurrentDispatcher { get; } = new();
+
         public Task BeginInvoke(Action action) => Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(action).GetTask();
 
         public void Invoke(Action action) => Avalonia.Threading.Dispatcher.UIThread.Invoke(action);
@@ -52,7 +55,7 @@ namespace System.Windows.Threading
 namespace System.Windows.Media.Imaging
 {
     /// <summary>A decoded picture the UI can show: an <see cref="IImage"/> that wraps an Avalonia bitmap.</summary>
-    public sealed class BitmapSource : IImage, IDisposable
+    public class BitmapSource : IImage, IDisposable
     {
         readonly Bitmap _bitmap;
 
@@ -60,41 +63,50 @@ namespace System.Windows.Media.Imaging
 
         public Avalonia.Size Size => _bitmap.Size;
 
+        public int PixelWidth => _bitmap.PixelSize.Width;
+
+        public int PixelHeight => _bitmap.PixelSize.Height;
+
         public Bitmap Bitmap => _bitmap;
 
         public void Draw(DrawingContext context, Avalonia.Rect sourceRect, Avalonia.Rect destRect) => ((IImage)_bitmap).Draw(context, sourceRect, destRect);
 
+        /// <summary>WPF freezes a bitmap to share it across threads; these are not changed once made.</summary>
+        public void Freeze()
+        {
+        }
+
         /// <summary>A picture from 32-bit BGRA rows (what the engine's frame grabber returns).</summary>
         public static BitmapSource FromBgra(byte[] bgra, int width, int height)
         {
-            var bitmap = new Avalonia.Media.Imaging.WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), Avalonia.Platform.PixelFormat.Bgra8888, AlphaFormat.Opaque);
+            var bitmap = new Avalonia.Media.Imaging.WriteableBitmap(new PixelSize(width, height), new Avalonia.Vector(96, 96), Avalonia.Platform.PixelFormat.Bgra8888, AlphaFormat.Opaque);
             using (var locked = bitmap.Lock())
                 System.Runtime.InteropServices.Marshal.Copy(bgra, 0, locked.Address, Math.Min(bgra.Length, locked.RowBytes * height));
             return new BitmapSource(bitmap);
         }
 
+        public static BitmapSource Create(int width, int height, double dpiX, double dpiY, System.Windows.Media.PixelFormat format, object? palette, byte[] pixels, int stride) =>
+            FromBgra(pixels, width, height);
+
         public void Dispose() => _bitmap.Dispose();
     }
 
     /// <summary>A picture a player draws into frame by frame (WPF's WriteableBitmap, BGRA only).</summary>
-    public sealed class WriteableBitmap : IImage
+    public sealed class WriteableBitmap : BitmapSource
     {
+        readonly Avalonia.Media.Imaging.WriteableBitmap _writable;
 
-        readonly Avalonia.Media.Imaging.WriteableBitmap _bitmap;
+        public WriteableBitmap(int width, int height, double dpiX, double dpiY, System.Windows.Media.PixelFormat format, object? palette)
+            : this(new Avalonia.Media.Imaging.WriteableBitmap(new PixelSize(width, height), new Avalonia.Vector(dpiX, dpiY), Avalonia.Platform.PixelFormat.Bgra8888, AlphaFormat.Premul))
+        {
+        }
 
-        public WriteableBitmap(int width, int height, double dpiX, double dpiY, System.Windows.Media.PixelFormat format, object? palette) =>
-            _bitmap = new Avalonia.Media.Imaging.WriteableBitmap(new PixelSize(width, height), new Vector(dpiX, dpiY), Avalonia.Platform.PixelFormat.Bgra8888, AlphaFormat.Premul);
-
-        public Avalonia.Size Size => _bitmap.Size;
-
-        public Avalonia.Media.Imaging.WriteableBitmap Bitmap => _bitmap;
-
-        public void Draw(DrawingContext context, Avalonia.Rect sourceRect, Avalonia.Rect destRect) => ((IImage)_bitmap).Draw(context, sourceRect, destRect);
+        WriteableBitmap(Avalonia.Media.Imaging.WriteableBitmap bitmap) : base(bitmap) => _writable = bitmap;
 
         /// <summary>Copies <paramref name="rect"/> worth of BGRA rows (<paramref name="stride"/> bytes apart) in.</summary>
         public void WritePixels(System.Windows.Int32Rect rect, byte[] pixels, int stride, int offset)
         {
-            using var locked = _bitmap.Lock();
+            using var locked = _writable.Lock();
             for (int y = 0; y < rect.Height; y++)
                 System.Runtime.InteropServices.Marshal.Copy(pixels, offset + y * stride, locked.Address + (rect.Y + y) * locked.RowBytes + rect.X * 4, rect.Width * 4);
         }

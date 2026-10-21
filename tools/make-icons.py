@@ -6,8 +6,11 @@ MAP = {
  "E72D":"share-2","E737":"app-window","E73E":"check","E74D":"trash-2","E74E":"save","E765":"keyboard","E767":"volume-2",
  "E768":"play","E769":"pause","E777":"rotate-ccw","E7BA":"triangle-alert","E7C8":"circle-dot","E7F4":"monitor","E7FC":"gamepad-2",
  "E838":"folder-open","E896":"download","E8B3":"list-checks","E8B9":"images","E9D9":"activity","F3B1":"log-out",
- "E70F":"pencil","E8C8":"copy","E7F0":"scissors","E76B":"chevron-left","E76C":"chevron-right","E76E":"chevron-down","E70D":"chevron-down",
+ "E70F":"pencil","E8C8":"copy","E7F0":"captions","E8C6":"scissors","E76B":"chevron-left","E76C":"chevron-right","E76E":"chevron-down","E70D":"chevron-down",
  "E712":"ellipsis","E710":"plus","E108":"play","E109":"pause",
+ "E91B":"image","E8D2":"type","EDFB":"pen-line","E879":"shapes","ED1A":"droplet","E7A8":"crop","E762":"sliders-horizontal",
+ "E72A":"arrow-right","E72B":"arrow-left","E739":"square","EA3A":"circle","E790":"palette","E71E":"search",
+ "E7A7":"undo-2","E7A6":"redo-2","E783":"circle-alert","E74F":"volume-x","E8A7":"external-link","E7C2":"arrow-left","E8BB":"x","F5B0":"play",
 }
 names = sorted(set(MAP.values()) | {"minus","square-dashed"})
 ns = "{http://www.w3.org/2000/svg}"

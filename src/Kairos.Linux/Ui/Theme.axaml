@@ -325,6 +325,19 @@
     <Style Selector="ComboBox, TextBox">
         <Setter Property="CornerRadius" Value="8"/>
     </Style>
+    <!-- Typing a text in place on the picture: no field frame, fill or focus line (the app's text fields have them) -->
+    <Style Selector="TextBox.Plain">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="4">
+                    <TextPresenter Name="PART_TextPresenter" Text="{TemplateBinding Text, Mode=TwoWay}" CaretBrush="{TemplateBinding CaretBrush}"
+                                   CaretIndex="{TemplateBinding CaretIndex}" SelectionStart="{TemplateBinding SelectionStart}" SelectionEnd="{TemplateBinding SelectionEnd}"
+                                   TextAlignment="{TemplateBinding TextAlignment}" VerticalAlignment="Center"/>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
     <Style Selector="ToolTip">
         <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
     </Style>

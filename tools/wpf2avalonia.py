@@ -49,6 +49,7 @@ src = re.sub(r'SelectedValuePath="([\w.]+)"', r'SelectedValueBinding="{Binding \
 src = re.sub(r'StrokeDashArray="([\d.]+) ([\d.]+)"', r'StrokeDashArray="\1,\2"', src)
 
 # things WPF-only that carry no meaning here
+src = re.sub(r'\s+WindowChrome\.[\w.]+="[^"]*"', '', src)
 for attr in ('UseLayoutRounding', 'SnapsToDevicePixels', 'FocusVisualStyle', 'TextOptions.TextFormattingMode', 'Focusable'):
     src = re.sub(rf'\s+{re.escape(attr)}="[^"]*"', '', src)
 

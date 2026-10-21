@@ -155,6 +155,8 @@
             <!-- The viewers, over everything but the window's own buttons -->
             <l:PictureViewer x:Name="PictureLayer" Grid.RowSpan="2" Grid.ColumnSpan="2" ZIndex="9" IsVisible="False"/>
             <e:VideoViewer x:Name="VideoLayer" Grid.RowSpan="2" Grid.ColumnSpan="2" ZIndex="9" IsVisible="False"/>
+            <!-- The editor: over the viewers, under the window's own buttons -->
+            <ContentControl x:Name="EditorLayer" Grid.RowSpan="2" Grid.ColumnSpan="2" ZIndex="10" IsVisible="False"/>
 
             <!-- Edges for resizing (the window has no frame of its own) -->
             <Border Name="EdgeLeft" Grid.RowSpan="2" HorizontalAlignment="Left" Width="5" Background="Transparent" Cursor="SizeWestEast" ZIndex="30"/>
