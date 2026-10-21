@@ -31,7 +31,7 @@ public static class CaptureBackend
          Path.Combine(appFolder, "data", "obs-plugins", name) + Path.DirectorySeparatorChar);
 
     /// <summary>Whether a source type lists its devices only through an instance (libobs's X11 capture crashes without one).</summary>
-    public const bool PropertiesNeedInstance = false;
+    public static bool PropertiesNeedInstance(string sourceId) => false;
 
     /// <summary>Called before libobs starts: where the platform needs telling about its windowing system (not Windows).</summary>
     public static void BeforeStartup()

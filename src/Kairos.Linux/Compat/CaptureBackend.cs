@@ -35,8 +35,8 @@ public static class CaptureBackend
         (Path.Combine(Prefix(appFolder), "lib", "obs-plugins", name + ".so"),
          Path.Combine(Prefix(appFolder), "share", "obs", "obs-plugins", name) + Path.DirectorySeparatorChar);
 
-    /// <summary>Whether a source type lists its devices only through an instance (libobs's X11 capture crashes without one).</summary>
-    public const bool PropertiesNeedInstance = true;
+    /// <summary>Whether a source type lists its devices only through an instance (libobs's X11 capture crashes without one). Not the audio sources: an instance of one opens a recording stream.</summary>
+    public static bool PropertiesNeedInstance(string sourceId) => sourceId is "xshm_input" or "xcomposite_input";
 
     /// <summary>
     /// libobs on Linux is told the windowing system and its X connection by the program (OBS Studio does the same):

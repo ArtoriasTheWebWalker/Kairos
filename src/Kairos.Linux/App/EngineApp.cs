@@ -59,6 +59,9 @@ public sealed class EngineApp
 
         bool firstRun = !File.Exists(SettingsStore.DefaultPath);
         _settings = SettingsStore.Load(SettingsStore.DefaultPath);
+        // The installer's language page does this on Windows; here the first run follows the system language.
+        if (firstRun)
+            _settings.General.Language = AppSettings.DefaultLanguage(System.Globalization.CultureInfo.CurrentUICulture);
         // The install wizard's language and start-with-Windows choice, once after it ran.
         bool chosen = InstallChoices.ConsumeInto(_settings, SettingsStore.AppDataDir);
         // A first install takes the usual keys, or for each one another app holds (NVIDIA's are the same), a free one.

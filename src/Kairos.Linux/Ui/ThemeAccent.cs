@@ -14,6 +14,14 @@ public static class ThemeAccent
         resources["AccentSoft"] = Brush(ThemeColors.Soft);
         resources["OnAccent"] = Brush(ThemeColors.OnAccent);
         resources["AccentColor"] = ColorOf(ThemeColors.Accent);
+        // Fluent's own controls (sliders, focus rings, selection) take the accent from these; without them they use the system blue.
+        foreach (string key in new[] { "SystemAccentColor", "SystemAccentColorLight1", "SystemAccentColorLight2", "SystemAccentColorLight3",
+                     "SystemAccentColorDark1", "SystemAccentColorDark2", "SystemAccentColorDark3" })
+            resources[key] = ColorOf(ThemeColors.Accent);
+        foreach (string key in new[] { "SliderThumbBackground", "SliderThumbBackgroundPointerOver", "SliderThumbBackgroundPressed",
+                     "SliderTrackValueFill", "SliderTrackValueFillPointerOver", "SliderTrackValueFillPressed",
+                     "AccentFillColorDefaultBrush", "AccentFillColorSecondaryBrush", "AccentFillColorTertiaryBrush" })
+            resources[key] = Brush(ThemeColors.Accent);
     }
 
     public static Color ColorOf(uint rgb) => Color.FromRgb((byte)(rgb >> 16 & 0xFF), (byte)(rgb >> 8 & 0xFF), (byte)(rgb & 0xFF));

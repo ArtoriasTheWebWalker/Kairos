@@ -16,7 +16,17 @@ public sealed class KairosApp : Application
     /// <summary>What to do once Avalonia is up; set by Program before the app starts.</summary>
     public static Action<IClassicDesktopStyleApplicationLifetime>? Opened { get; set; }
 
-    public override void Initialize() => Styles.Add(new FluentTheme());
+    public override void Initialize()
+    {
+        RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+        Styles.Add(new FluentTheme());
+        // The look of the settings window; the engine, which has no window, never needs it.
+        if (ThemeEnabled)
+            Styles.Add(new Avalonia.Markup.Xaml.Styling.StyleInclude(new Uri("avares://kairos/")) { Source = new Uri("avares://kairos/Ui/Theme.axaml") });
+    }
+
+    /// <summary>Whether to load the settings window's theme (set by Program before the app starts).</summary>
+    public static bool ThemeEnabled { get; set; }
 
     public override void OnFrameworkInitializationCompleted()
     {

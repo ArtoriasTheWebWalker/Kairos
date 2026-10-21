@@ -13,6 +13,8 @@
     <AssemblyName>kairos</AssemblyName>
     <RootNamespace>Kairos</RootNamespace>
     <Version>1.0.1</Version>
+    <!-- The pages are the Windows app's, bound to a DataContext by reflection (as WPF does), not compiled against a type. -->
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <WinSrc>$(MSBuildThisFileDirectory)..\Kairos\</WinSrc>
@@ -24,6 +26,7 @@
     <Compile Include="$(WinSrc)Native\**\*.cs" LinkBase="Native" />
     <Compile Include="**\*.cs" Exclude="obj\**;bin\**" />
     <EmbeddedResource Include="$(WinSrc)App\Lang\*.json" LogicalName="Lang.%(Filename).json" />
+    <EmbeddedResource Include="Lang\*.json" LogicalName="Lang.%(Filename).json" />
   </ItemGroup>
 
   <!-- libobs finds its helper programs (obs-ffmpeg-mux saves clips, obs-nvenc-test probes NVENC) beside the executable. -->
@@ -33,6 +36,11 @@
   </PropertyGroup>
   <ItemGroup Condition="Exists('$(ObsPrefix)/bin')">
     <Content Include="$(ObsPrefix)/bin/*" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The window's pictures, from the Windows app's own folder -->
+    <AvaloniaResource Include="$(WinSrc)Ui\Assets\*.png" Link="Ui/Assets/%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

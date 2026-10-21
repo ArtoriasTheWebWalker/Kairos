@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Kairos.App;
 using Kairos.Native;
+using Kairos.Platform;
 
 namespace Kairos;
 
@@ -20,6 +21,9 @@ public static class Program
             case "--selftest-record": return SelfTests.Record();
             case "--selftest-hotkeys": return SelfTests.Hotkeys();
             case "--selftest-foreground": return SelfTests.Foreground();
+            case "--settings":
+                KairosApp.ThemeEnabled = true;
+                return Ui.SettingsApp.Run();
             case "--send":
                 Console.WriteLine(PipeClient.Send(args.Length > 1 ? args[1] : "status") ?? "(engine not running)");
                 return 0;
@@ -33,8 +37,8 @@ public static class Program
 
     static int RunEngine(bool background)
     {
-        using var mutex = new Mutex(true, AppInfo.EngineMutex, out bool first);
-        if (!first)
+        using var instance = InstanceLock.TryAcquire("engine");
+        if (instance == null)
         {
             // Already running: a plain launch means "show me the settings".
             if (!background)
@@ -48,7 +52,7 @@ public static class Program
         KairosApp.Opened = _ => engine = new EngineApp(openSettings: !background, background);
         int code = KairosApp.Build(software: true).StartWithClassicDesktopLifetime([], ShutdownMode.OnExplicitShutdown);
         GC.KeepAlive(engine);
-        GC.KeepAlive(mutex);
+        GC.KeepAlive(instance);
         return code;
     }
 }

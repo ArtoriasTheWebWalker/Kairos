@@ -177,8 +177,8 @@ public static partial class ObsHost
     {
         var items = new List<(string, string)>();
         // Some sources (X11 screen capture) cannot describe themselves without an instance.
-        IntPtr instance = CaptureBackend.PropertiesNeedInstance ? Obs.obs_source_create(sourceId, "properties", IntPtr.Zero, IntPtr.Zero) : IntPtr.Zero;
-        IntPtr props = CaptureBackend.PropertiesNeedInstance
+        IntPtr instance = CaptureBackend.PropertiesNeedInstance(sourceId) ? Obs.obs_source_create(sourceId, "properties", IntPtr.Zero, IntPtr.Zero) : IntPtr.Zero;
+        IntPtr props = CaptureBackend.PropertiesNeedInstance(sourceId)
             ? instance == IntPtr.Zero ? IntPtr.Zero : Obs.obs_source_properties(instance)
             : Obs.obs_get_source_properties(sourceId);
         if (props == IntPtr.Zero)
