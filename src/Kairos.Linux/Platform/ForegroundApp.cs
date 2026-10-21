@@ -42,6 +42,19 @@ public static class ForegroundApp
         return ClipOrganizer.AppFolderName(path != null ? Path.GetFileNameWithoutExtension(path) : null, null, title);
     }
 
+    /// <summary>The command line of process <paramref name="pid"/> (arguments joined by spaces); empty when it is gone.</summary>
+    internal static string CommandLine(int pid)
+    {
+        try
+        {
+            return File.ReadAllText($"/proc/{pid}/cmdline", Encoding.UTF8).Replace('\0', ' ');
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return "";
+        }
+    }
+
     /// <summary>
     /// The program file of process <paramref name="pid"/>, or null when it is gone. A Windows game under Wine or Proton is
     /// really "wine ... Game.exe": the .exe on its command line names it, not wine.
