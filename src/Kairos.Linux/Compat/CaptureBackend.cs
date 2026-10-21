@@ -19,6 +19,20 @@ public static class CaptureBackend
     /// </summary>
     public const bool HasGameCapture = true;
 
+    /// <summary>FFmpeg 8 (Mint and Ubuntu ship 6): beside the program in ffmpeg/lib, else the development copy tools/get-ffmpeg.sh makes.</summary>
+    public static string FfmpegFolder
+    {
+        get
+        {
+            string bundled = Path.Combine(AppContext.BaseDirectory, "ffmpeg", "lib");
+            return Directory.Exists(bundled) ? bundled : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "ffmpeg8", "lib");
+        }
+    }
+
+    public const string FfmpegMainLibrary = "libavcodec.so.62";
+
+    public static string FfmpegLibraryName(string library, int version) => $"lib{library}.so.{version}";
+
     /// <summary>
     /// Cut the video feed while the buffer is paused and nothing records. libobs keeps capturing a source that is on the output
     /// channel whether or not an encoder listens, and on X11 that is the X server copying every frame (measured: Xorg at 80-90%

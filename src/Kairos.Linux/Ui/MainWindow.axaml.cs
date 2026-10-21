@@ -12,6 +12,8 @@ namespace Kairos.Ui;
 public partial class MainWindow : Window
 {
     readonly SettingsViewModel _vm;
+    readonly ClipsViewModel _clips;
+    ClipsPage? _clipsPage;
     readonly Dictionary<string, Func<Control>> _pages;
     string? _current;
 
@@ -20,10 +22,18 @@ public partial class MainWindow : Window
     public MainWindow(SettingsViewModel vm)
     {
         _vm = vm;
+        _clips = new ClipsViewModel(() => _vm.EffectiveFolder, () => _vm.HkSave, () => _vm.HkScreenshot);
         InitializeComponent();
         DataContext = vm;
+        LibraryBar.DataContext = _clips; // the Library's chosen clips
+        // The built-in player, viewer and share panel are not ported yet: these open the system's own apps.
+        _clips.VideoRequested += clip => OpenOutside(clip.Path);
+        _clips.PictureRequested += clip => OpenOutside(clip.Path);
+        _clips.ShareRequested += clip => ShowInFolder(clip.Path);
+        _vm.ShareRequested += path => ShowInFolder(path);
+        _vm.PictureRequested += path => OpenOutside(path);
         Title = Text.Get("app");
-        Icon = new WindowIcon(new MemoryStream(AppIconArt.Png(AppIconArt.Draw(256, Settings.ThemeColors.Accent))));
+        Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://kairos/Assets/icons/kairos-256.png")));
         Wordmark.Source = new Bitmap(AssetLoader.Open(new Uri($"avares://kairos/Ui/Assets/wordmark-{(Text.IsArabic ? "ar" : "en")}.png")));
         Wordmark.Height = Text.IsArabic ? 28 : 22;
         FlowDirection = Text.IsRightToLeft ? Avalonia.Media.FlowDirection.RightToLeft : Avalonia.Media.FlowDirection.LeftToRight;
@@ -31,6 +41,7 @@ public partial class MainWindow : Window
         _pages = new()
         {
             ["status"] = () => new StatusPage(),
+            ["clips"] = () => { _clips.Refresh(); return _clipsPage ??= new ClipsPage { DataContext = _clips }; },
             ["capture"] = () => new CapturePage(),
             ["quality"] = () => new QualityPage(),
             ["audio"] = () => new AudioPage(),
@@ -82,6 +93,18 @@ public partial class MainWindow : Window
         CloseButton.Click += (_, _) => Close();
     }
 
+    static void OpenOutside(string path)
+    {
+        if (File.Exists(path))
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("xdg-open", [path]) { UseShellExecute = false });
+    }
+
+    static void ShowInFolder(string path)
+    {
+        if (File.Exists(path))
+            System.Diagnostics.Process.Start(ShellPaths.ShowInFolder(path));
+    }
+
     void ToggleMaximize() => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
 
     void ShowPage(string name)
@@ -89,7 +112,15 @@ public partial class MainWindow : Window
         if (_current == name || !_pages.TryGetValue(name, out var make))
             return;
         _current = name;
-        PageHost.Content = make();
+        // The Clips page stays in its own host (hidden on other pages): coming back needs no rebuilding or new layout.
+        bool clips = name == "clips";
+        ClipsHost.IsVisible = clips;
+        PageHost.IsVisible = !clips;
+        LibraryBarLayer.IsVisible = clips;
+        if (clips)
+            ClipsHost.Content = make();
+        else
+            PageHost.Content = make();
         Scroller.ScrollToHome();
         var nav = name switch
         {

@@ -101,6 +101,43 @@
                     </Grid>
                 </ScrollViewer>
 
+                <!-- The Library's chosen clips: a bar floating at the bottom, over the cards (they never move) -->
+                <Grid Name="LibraryBarLayer" Grid.Row="1" IsVisible="False" IsHitTestVisible="True" VerticalAlignment="Bottom" HorizontalAlignment="Center">
+                    <Border Name="LibraryBar" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,22" Padding="18,8,8,8" CornerRadius="14"
+                            Background="{StaticResource CardHover}" BorderBrush="{StaticResource StrokeStrong}" BorderThickness="1"
+                            BoxShadow="0 6 28 0 #73000000" IsVisible="{Binding HasSelection}">
+                        <Grid>
+                            <!-- How many, and what to do with them -->
+                            <StackPanel Orientation="Horizontal" IsVisible="{Binding !ConfirmingPermanent}">
+                                <TextBlock Text="{Binding SelectedText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                                <Button Classes="Ghost" Command="{Binding RecycleSelectedCommand}" Padding="12,7" Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <l:Icon Glyph="E74D" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{l:T clips.recycle}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="Ghost" Command="{Binding AskPermanentCommand}" Padding="12,7" Foreground="{DynamicResource Accent}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <l:Icon Glyph="E74D" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{l:T clips.deleteForever}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="Ghost" Command="{Binding ClearSelectionCommand}" BorderThickness="0" Padding="10,8" Margin="6,0,0,0"
+                                        ToolTip.Tip="{l:T clips.clearSelection}" AutomationProperties.Name="{l:T clips.clearSelection}">
+                                    <l:Icon Glyph="E711" FontSize="12"/>
+                                </Button>
+                            </StackPanel>
+                            <!-- Delete for good: asked here, in the same bar -->
+                            <StackPanel Orientation="Horizontal" IsVisible="{Binding ConfirmingPermanent}">
+                                <l:Icon Glyph="E7BA" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="{Binding ConfirmText}" VerticalAlignment="Center" Margin="0,0,16,0" MaxWidth="360" TextTrimming="CharacterEllipsis"/>
+                                <Button Classes="Ghost" Content="{l:T clips.cancel}" Command="{Binding CancelPermanentCommand}" Padding="14,7" Margin="0,0,8,0"/>
+                                <Button Classes="Primary" Content="{l:T clips.confirm}" Command="{Binding ConfirmPermanentCommand}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+
                 <Border Grid.Row="2" Background="{StaticResource NavBg}" BorderBrush="{StaticResource Stroke}" BorderThickness="0,1,0,0" Padding="28,12"
                         IsVisible="{Binding ShowBar}">
                     <DockPanel LastChildFill="False">

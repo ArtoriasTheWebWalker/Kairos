@@ -26,7 +26,9 @@ public static class Program
                 return Ui.SettingsApp.Run();
             case "--write-icon":
                 // kairos --write-icon <app.png>: the app icon, from the same drawing the window uses.
-                File.WriteAllBytes(args[1], AppIconArt.Png(AppIconArt.Draw(256, Kairos.Settings.ThemeColors.Accent)));
+                using (var icon = Avalonia.Platform.AssetLoader.Open(new Uri("avares://kairos/Assets/icons/kairos-256.png")))
+                using (var file = File.Create(args[1]))
+                    icon.CopyTo(file);
                 return 0;
             case "--send":
                 Console.WriteLine(PipeClient.Send(args.Length > 1 ? args[1] : "status") ?? "(engine not running)");

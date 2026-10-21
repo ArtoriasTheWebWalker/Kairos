@@ -19,6 +19,14 @@ public static class CaptureBackend
     /// <summary>Whether a game can be hooked directly; where it cannot, Game mode records the screen.</summary>
     public const bool HasGameCapture = true;
 
+    /// <summary>Where the FFmpeg 8 libraries are: beside the program.</summary>
+    public static string FfmpegFolder => AppContext.BaseDirectory;
+
+    /// <summary>The file that tells FFmpeg 8 is there.</summary>
+    public const string FfmpegMainLibrary = "avcodec-62.dll";
+
+    public static string FfmpegLibraryName(string library, int version) => $"{library}-{version}.dll";
+
     /// <summary>Whether the video feed is cut while nothing records (the screen is then not captured at all).</summary>
     public const bool DetachVideoWhenIdle = false;
 
