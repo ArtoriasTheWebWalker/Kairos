@@ -19,6 +19,9 @@ public static class CaptureBackend
     /// <summary>Whether a game can be hooked directly; where it cannot, Game mode records the screen.</summary>
     public const bool HasGameCapture = true;
 
+    /// <summary>Whether Game mode also records the screen behind the game source (the setting: shown when no game is running).</summary>
+    public static bool ScreenBehindGame(bool fallbackSetting) => fallbackSetting || !HasGameCapture;
+
     /// <summary>
     /// Where libobs starts: it looks for its own files only as ../../data/libobs/ from the working directory, so in the
     /// one-folder program that is data\libobs itself.

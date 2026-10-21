@@ -39,6 +39,16 @@ public sealed class CapturePipeline : IDisposable
     }
 
     public string ClipsFolder { get; private set; } = "";
+
+    /// <summary>The Game mode source, for a backend that points it at another window as focus moves (none: IntPtr.Zero).</summary>
+    public IntPtr GameSource { get; private set; }
+
+    /// <summary>Changes the Game mode source's settings in place.</summary>
+    public void UpdateGameSource(ObsData settings)
+    {
+        if (GameSource != IntPtr.Zero)
+            Obs.obs_source_update(GameSource, settings.Handle);
+    }
     public bool FolderFellBack { get; private set; }
     public EncoderPlan? Plan { get; private set; }
     public EncoderChoice? Choice { get; private set; }
@@ -103,11 +113,12 @@ public sealed class CapturePipeline : IDisposable
                 break;
 
             case CaptureMode.Game:
-                if (_s.Capture.GameFallbackToScreen || !CaptureBackend.HasGameCapture)
+                if (CaptureBackend.ScreenBehindGame(_s.Capture.GameFallbackToScreen))
                     AddToScene(CreateMonitorSource(monitorId), baseW, baseH);
                 if (CaptureBackend.HasGameCapture)
                 {
                     IntPtr game = CreateSource(CaptureBackend.Game(_s.Capture.CaptureCursor, _s.Audio.SourceAudioOnly), "Game");
+                    GameSource = game;
                     AddToScene(game, baseW, baseH);
                     if (_s.Audio.SourceAudioOnly)
                     {

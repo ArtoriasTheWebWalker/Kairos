@@ -143,6 +143,7 @@ public static class Obs
     // Properties
     [DllImport(Lib, CallingConvention = Cc)] public static extern IntPtr obs_get_source_properties([MarshalAs(U8)] string id);
     [DllImport(Lib, CallingConvention = Cc)] public static extern IntPtr obs_source_properties(IntPtr source);
+    [DllImport(Lib, CallingConvention = Cc)] public static extern void obs_source_update(IntPtr source, IntPtr settings);
     [DllImport(Lib, CallingConvention = Cc)] public static extern IntPtr obs_properties_get(IntPtr props, [MarshalAs(U8)] string name);
     [DllImport(Lib, CallingConvention = Cc)] public static extern void obs_properties_destroy(IntPtr props);
     [DllImport(Lib, CallingConvention = Cc)] public static extern UIntPtr obs_property_list_item_count(IntPtr p);

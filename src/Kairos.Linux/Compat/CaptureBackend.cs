@@ -12,8 +12,15 @@ public static class CaptureBackend
 
     public const string GraphicsModule = "libobs-opengl";
 
-    /// <summary>No game hook on Linux: Game mode records the screen.</summary>
-    public const bool HasGameCapture = false;
+    /// <summary>
+    /// Games mode records the window in front through the compositor (xcomposite): the window's pixmap becomes a GPU texture with
+    /// no copy through the CPU. Whole-screen capture (xshm) makes the X server copy every frame, which cost about 40% of a core
+    /// together at 1080p60 on a 3440x1440 screen, against about 8% for a window.
+    /// </summary>
+    public const bool HasGameCapture = true;
+
+    /// <summary>The window source follows focus (see GameFollower), so no screen is recorded behind it.</summary>
+    public static bool ScreenBehindGame(bool fallbackSetting) => false;
 
     /// <summary>
     /// The libobs install: KAIROS_OBS_PREFIX, else obs\ beside the program (what the package bundles), else a prefix
@@ -58,7 +65,8 @@ public static class CaptureBackend
     public static (string Id, ObsData Settings) Window(string window, bool cursor) =>
         ("xcomposite_input", new ObsData().Set("capture_window", window).Set("show_cursor", cursor));
 
-    public static (string Id, ObsData Settings) Game(bool cursor, bool captureAudio) => Screen("", cursor);
+    public static (string Id, ObsData Settings) Game(bool cursor, bool captureAudio) =>
+        ("xcomposite_input", new ObsData().Set("capture_window", Kairos.App.GameFollower.Target() ?? "").Set("show_cursor", cursor));
 
     public static (string Id, ObsData Settings) DesktopAudio(string device) =>
         ("pulse_output_capture", new ObsData().Set("device_id", device));

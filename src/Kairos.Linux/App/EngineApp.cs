@@ -224,6 +224,7 @@ public sealed class EngineApp
         ? (Text.Format("toast.keyTaken", keys[0]), Text.Get("toast.keyTakenFix"))
         : (Text.Format("toast.keysTaken", Text.Count("count.hotkeys", keys.Count)), string.Join(Text.Get("list.separator"), keys));
 
+    GameFollower? _gameFollower;
     bool _builtOnce;
 
     void RebuildPipeline()
@@ -241,6 +242,8 @@ public sealed class EngineApp
             p.RecordingStopped += (path, seconds) => UiThread.Post(() => OnRecordingStopped(path, seconds));
             p.Build();
             _pipeline = p;
+            _gameFollower?.Dispose();
+            _gameFollower = _settings.Capture.Mode == CaptureMode.Game ? new GameFollower(p) : null;
             _lastClip ??= NewestClip(p.ClipsFolder);
             _lastShot ??= ClipLibrary.NewestPicture(p.ClipsFolder);
             _retried = false;
@@ -628,6 +631,7 @@ public sealed class EngineApp
         _watcher?.Dispose();
         _hotkeys.Dispose();
         long before = clock.ElapsedMilliseconds;
+        _gameFollower?.Dispose();
         _pipeline?.Dispose();
         _pipeline = null;
         _voice.Dispose();
