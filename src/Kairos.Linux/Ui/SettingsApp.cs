@@ -11,7 +11,7 @@ namespace Kairos.Ui;
 public static class SettingsApp
 {
     /// <summary>A second launch asks the open window to come forward over this pipe (Windows uses a named event).</summary>
-    const string ShowPipe = "Kairos.Settings";
+    static readonly string ShowPipe = "Kairos.Settings" + Ipc.PipeName[AppInfo.PipeName.Length..];
 
     public static int Run()
     {

@@ -29,7 +29,9 @@ public sealed record CapsDto(
 
 public static class Ipc
 {
-    public const string PipeName = AppInfo.PipeName;
+    /// <summary>The engine's pipe. A development copy with its own data folder (KAIROS_DATA) gets a pipe of its own, so it never talks to the real one.</summary>
+    public static readonly string PipeName = AppInfo.PipeName +
+        (Environment.GetEnvironmentVariable("KAIROS_DATA") is { Length: > 0 } dev ? "." + Convert.ToHexString(System.Security.Cryptography.SHA1.HashData(System.Text.Encoding.UTF8.GetBytes(dev)))[..8] : "");
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 }
 

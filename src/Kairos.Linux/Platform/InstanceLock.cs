@@ -17,7 +17,9 @@ public sealed class InstanceLock : IDisposable
         string folder = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR") is { Length: > 0 } run && Directory.Exists(run) ? run : Path.GetTempPath();
         try
         {
-            return new InstanceLock(new FileStream(Path.Combine(folder, $"kairos-{name}-{Environment.UserName}.lock"),
+            // A development copy with its own data folder (KAIROS_DATA) is its own instance.
+            string data = Environment.GetEnvironmentVariable("KAIROS_DATA") is { Length: > 0 } d ? "-" + Convert.ToHexString(System.Security.Cryptography.SHA1.HashData(System.Text.Encoding.UTF8.GetBytes(d)))[..8] : "";
+            return new InstanceLock(new FileStream(Path.Combine(folder, $"kairos-{name}-{Environment.UserName}{data}.lock"),
                 FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None));
         }
         catch (IOException)
