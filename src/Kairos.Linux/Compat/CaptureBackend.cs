@@ -19,6 +19,13 @@ public static class CaptureBackend
     /// </summary>
     public const bool HasGameCapture = true;
 
+    /// <summary>
+    /// Cut the video feed while the buffer is paused and nothing records. libobs keeps capturing a source that is on the output
+    /// channel whether or not an encoder listens, and on X11 that is the X server copying every frame (measured: Xorg at 80-90%
+    /// of a core with the buffer paused, against 7% without Kairos).
+    /// </summary>
+    public const bool DetachVideoWhenIdle = true;
+
     /// <summary>The window source follows focus (see GameFollower), so no screen is recorded behind it.</summary>
     public static bool ScreenBehindGame(bool fallbackSetting) => false;
 

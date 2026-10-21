@@ -62,6 +62,9 @@ public sealed class EngineApp
         // The installer's language page does this on Windows; here the first run follows the system language.
         if (firstRun)
             _settings.General.Language = AppSettings.DefaultLanguage(System.Globalization.CultureInfo.CurrentUICulture);
+        // Whole-screen capture makes the X server copy every frame (it ran at 87% of a core beside a game); the window in front does not.
+        if (firstRun)
+            _settings.Capture.Mode = CaptureMode.Game;
         // The install wizard's language and start-with-Windows choice, once after it ran.
         bool chosen = InstallChoices.ConsumeInto(_settings, SettingsStore.AppDataDir);
         // A first install takes the usual keys, or for each one another app holds (NVIDIA's are the same), a free one.
@@ -423,11 +426,13 @@ public sealed class EngineApp
         string app = CapturedApp() ?? ClipOrganizer.AppFolderName(null, null, null);
         string target = ClipOrganizer.TargetPath(pipeline.ClipsFolder, app, DateTime.Now, _settings.Output.PerAppFolders, ".png");
         var (w, h) = pipeline.Base;
+        pipeline.HoldFeed(); // a paused pipeline is not capturing: bring the picture back for the grab
         Task.Run(async () =>
         {
             string? path = null;
             try
             {
+                await Task.Delay(300); // the source needs a frame or two once the scene is back
                 if (await ScreenshotGrabber.Grab(w, h, TimeSpan.FromSeconds(2)) is { } frame)
                     path = ScreenshotWriter.Write(target, frame);
             }
@@ -435,6 +440,7 @@ public sealed class EngineApp
             {
                 ObsLog.Warn($"screenshot not saved: {e.Message}");
             }
+            pipeline.ReleaseFeed();
             UiThread.Post(() => OnShotTaken(path, app, byVoice));
         });
     }

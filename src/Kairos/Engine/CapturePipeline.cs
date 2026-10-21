@@ -322,27 +322,72 @@ public sealed class CapturePipeline : IDisposable
         Obs.obs_sceneitem_set_pos(item, ref pos);
     }
 
+    int _feedHolds;
+    volatile bool _bufferStarting, _recordStarting;
+
+    /// <summary>The canvas is fed by the scene while something needs it: a buffer, a recording, or a held feed (a screenshot).</summary>
+    void ApplyFeed()
+    {
+        if (_scene == IntPtr.Zero)
+            return;
+        bool on = !CaptureBackend.DetachVideoWhenIdle || BufferActive || Recording || _bufferStarting || _recordStarting || Volatile.Read(ref _feedHolds) > 0;
+        Obs.obs_set_output_source(ChannelVideo, on ? Obs.obs_scene_get_source(_scene) : IntPtr.Zero);
+    }
+
+    /// <summary>Keeps the scene on the canvas (a screenshot of a paused pipeline needs a picture); pair with <see cref="ReleaseFeed"/>.</summary>
+    public void HoldFeed()
+    {
+        Interlocked.Increment(ref _feedHolds);
+        ApplyFeed();
+    }
+
+    public void ReleaseFeed()
+    {
+        Interlocked.Decrement(ref _feedHolds);
+        ApplyFeed();
+    }
+
     /// <summary>Starts or stops the replay buffer(s). Returns whether the buffer is active afterwards.</summary>
     public bool SetBufferActive(bool on)
     {
         if (on == BufferActive)
+        {
+            ApplyFeed();
             return on;
+        }
         if (!on)
         {
             Obs.obs_output_stop(_replay);
             if (_quick != IntPtr.Zero)
                 Obs.obs_output_stop(_quick);
+            // The buffers stop on libobs's thread; the feed goes once they have (see OnBufferStopped).
+            Task.Run(async () =>
+            {
+                for (int i = 0; i < 40 && BufferActive; i++)
+                    await Task.Delay(50);
+                ApplyFeed();
+            });
             return false;
         }
 
-        if (!Obs.obs_output_start(_replay))
+        _bufferStarting = true; // the scene is on the canvas before an output starts
+        ApplyFeed();
+        try
         {
-            LastError = Obs.Utf8(Obs.obs_output_get_last_error(_replay)) ?? "The replay buffer could not start";
-            ObsLog.Error($"replay start failed: {LastError}");
-            return false;
+            if (!Obs.obs_output_start(_replay))
+            {
+                LastError = Obs.Utf8(Obs.obs_output_get_last_error(_replay)) ?? "The replay buffer could not start";
+                ObsLog.Error($"replay start failed: {LastError}");
+                return false;
+            }
+            if (_quick != IntPtr.Zero && !Obs.obs_output_start(_quick))
+                ObsLog.Warn("quick buffer could not start");
         }
-        if (_quick != IntPtr.Zero && !Obs.obs_output_start(_quick))
-            ObsLog.Warn("quick buffer could not start");
+        finally
+        {
+            _bufferStarting = false;
+            ApplyFeed();
+        }
         LastError = null;
         _bufferStartedUtc = DateTime.UtcNow;
         return true;
@@ -411,10 +456,19 @@ public sealed class CapturePipeline : IDisposable
             _record = Obs.obs_output_create("ffmpeg_muxer", "Kairos record", d.Handle, IntPtr.Zero);
         AttachEncoders(_record);
         string path = _recordPath;
-        _onRecordStopped = (_, _) => RecordingStopped?.Invoke(path, _recordClock.Seconds(DateTime.UtcNow));
+        _onRecordStopped = (_, _) =>
+        {
+            ApplyFeed(); // nothing records any more: the scene may come off the canvas
+            RecordingStopped?.Invoke(path, _recordClock.Seconds(DateTime.UtcNow));
+        };
         Obs.signal_handler_connect(Obs.obs_output_get_signal_handler(_record), "stop", _onRecordStopped, IntPtr.Zero);
 
-        if (Obs.obs_output_start(_record))
+        _recordStarting = true;
+        ApplyFeed();
+        bool started = Obs.obs_output_start(_record);
+        _recordStarting = false;
+        ApplyFeed();
+        if (started)
         {
             _recordClock.Start(DateTime.UtcNow);
             return true;
