@@ -66,5 +66,6 @@ public static class IconMap
         ["E7C2"] = "arrow-left",
         ["E8BB"] = "x",
         ["F5B0"] = "play",
+        ["F8AE"] = "pause",
     };
 }

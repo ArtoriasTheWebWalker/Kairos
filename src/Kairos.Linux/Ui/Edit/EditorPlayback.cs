@@ -56,6 +56,8 @@ public sealed class EditorPlayback : IDisposable
     internal EditorPlayback(EditorViewModel vm, Action<BitmapSource?> show, Action<bool> showPlaying, IPlayerSession session)
     {
         _session = session;
+        if (session is PlayerSession live)
+            live.Frame += () => Frame?.Invoke();
         _vm = vm;
         _show = show;
         _showPlaying = showPlaying;
@@ -75,6 +77,9 @@ public sealed class EditorPlayback : IDisposable
     }
 
     /// <summary>A still picture was read, as it is before any look or blur, shrunk for the look tiles.</summary>
+    /// <summary>A playing picture may have been written (the preview redraws).</summary>
+    public event Action? Frame;
+
     public event Action<byte[]>? StillRead;
 
     /// <summary>The thread the last still picture was read on (tests: never the window's).</summary>

@@ -270,7 +270,7 @@ public sealed class EditTimeline : Panel
             if (_box is { } choosing)
                 dc.DrawRectangle(BoxFill, BoxEdge, choosing);
         }
-        PlaceHead(layout, height);
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => PlaceHead(layout, height)); // not while drawing: it redraws the head layer
     }
 
     /// <summary>The playhead layer: shown, the height of the timeline, moved to the playhead.</summary>

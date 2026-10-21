@@ -10,7 +10,7 @@ MAP = {
  "E712":"ellipsis","E710":"plus","E108":"play","E109":"pause",
  "E91B":"image","E8D2":"type","EDFB":"pen-line","E879":"shapes","ED1A":"droplet","E7A8":"crop","E762":"sliders-horizontal",
  "E72A":"arrow-right","E72B":"arrow-left","E739":"square","EA3A":"circle","E790":"palette","E71E":"search",
- "E7A7":"undo-2","E7A6":"redo-2","E783":"circle-alert","E74F":"volume-x","E8A7":"external-link","E7C2":"arrow-left","E8BB":"x","F5B0":"play",
+ "E7A7":"undo-2","E7A6":"redo-2","E783":"circle-alert","E74F":"volume-x","E8A7":"external-link","E7C2":"arrow-left","E8BB":"x","F5B0":"play","F8AE":"pause",
 }
 names = sorted(set(MAP.values()) | {"minus","square-dashed"})
 ns = "{http://www.w3.org/2000/svg}"

@@ -168,7 +168,16 @@ public partial class MainWindow : Window
         // Auto captions run Whisper in a hidden Kairos process of their own (kairos --captions).
         captions ??= new Edit.CaptionMaker(Engine.Captions.CaptionModel.Default, Engine.Captions.CaptionRuntime.Default, Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "kairos"));
         var vm = new Edit.EditorViewModel(start, isPicture, mode, aspect, audioStreams, captions);
-        var view = new Edit.EditorView(vm);
+        Edit.EditorView view;
+        try
+        {
+            view = new Edit.EditorView(vm);
+        }
+        catch (Exception e)
+        {
+            Engine.ObsLog.Error("editor: " + e); // the page stays where it was
+            return null;
+        }
         view.SetPicture(still);
         vm.Closed += CloseEditor;
         view.SaveChosen += replace => SaveFromEditor(view, vm, replace, mode);

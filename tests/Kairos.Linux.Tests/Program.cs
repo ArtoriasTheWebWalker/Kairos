@@ -30,6 +30,7 @@ public static class Assert
 public static class Program
 {
     const string Keys = "uses F18-F23, which a PC keyboard map lacks (X11 cannot grab an unmapped key); LinuxHotkeyTests covers the same";
+    const string Render = "draws with Avalonia, which needs the running app (the editor export was checked in the UI run)";
     const string Drive = "uses a Windows drive-letter path";
 
     static readonly Dictionary<string, string> Skipped = new()
@@ -44,6 +45,11 @@ public static class Program
         ["SettingsTests.Save_then_load_round_trips"] = Drive,
         ["ClipTests.Target_path_uses_app_folder_and_timestamp"] = Drive,
         ["SharePlannerTests.The_game_name_comes_from_the_clip_file_name"] = Drive,
+        ["ClipDeleteTests.Missing_or_locked_files_are_skipped_not_fatal"] = "a file in use cannot be locked against deletion on Linux",
+        ["EditExportTests.A_text_item_is_in_the_picture"] = Render,
+        ["EditExportTests.Fifty_caption_items_export"] = Render,
+        ["FrameGrabberTests.The_graphics_card_is_let_go_once_no_reader_uses_it"] = "D3D11 hardware decoding is Windows-only",
+        ["ShareSettingsTests.Old_prepared_files_are_cleaned_but_recent_ones_stay"] = "uses a Windows drive-letter path",
     };
 
     public static int Main(string[] args)

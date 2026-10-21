@@ -152,7 +152,7 @@
         <Style Selector="ToggleButton.MuteIcon:unchecked /template/ Line#Slash"><Setter Property="IsVisible" Value="True"/></Style>
 
         <!-- The Add pill's buttons: icon and name (the name hides when the bar is narrow) -->
-        <Style Selector="Button.AddButton">
+        <Style Selector=":is(Button).AddButton">
             <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Height" Value="30"/>
@@ -170,15 +170,15 @@
                 </ControlTemplate>
             </Setter>
         </Style>
-        <Style Selector="Button.AddButton:pointerover"><Setter Property="Foreground" Value="{StaticResource TextPrimary}"/></Style>
-        <Style Selector="Button.AddButton:pointerover /template/ Border#Bd"><Setter Property="Background" Value="{StaticResource CardHover}"/></Style>
-        <Style Selector="Button.AddButton:checked"><Setter Property="Foreground" Value="{StaticResource TextPrimary}"/></Style>
-        <Style Selector="Button.AddButton:checked /template/ Border#Bd">
+        <Style Selector=":is(Button).AddButton:pointerover"><Setter Property="Foreground" Value="{StaticResource TextPrimary}"/></Style>
+        <Style Selector=":is(Button).AddButton:pointerover /template/ Border#Bd"><Setter Property="Background" Value="{StaticResource CardHover}"/></Style>
+        <Style Selector=":is(Button).AddButton:checked"><Setter Property="Foreground" Value="{StaticResource TextPrimary}"/></Style>
+        <Style Selector=":is(Button).AddButton:checked /template/ Border#Bd">
             <Setter Property="Background" Value="{DynamicResource AccentSoft}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
         </Style>
-        <Style Selector="Button.AddButton:focus-visible /template/ Border#Bd"><Setter Property="BorderBrush" Value="{DynamicResource AccentHover}"/></Style>
-        <Style Selector="Button.AddButton:disabled"><Setter Property="Opacity" Value="0.4"/></Style>
+        <Style Selector=":is(Button).AddButton:focus-visible /template/ Border#Bd"><Setter Property="BorderBrush" Value="{DynamicResource AccentHover}"/></Style>
+        <Style Selector=":is(Button).AddButton:disabled"><Setter Property="Opacity" Value="0.4"/></Style>
 
         <!-- A square icon button of the play bar and the top bar -->
         <Style Selector="Button.IconButton">
@@ -236,15 +236,15 @@
             </Button>
             <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold" Margin="14,0" VerticalAlignment="Center"
                        TextTrimming="CharacterEllipsis" FlowDirection="LeftToRight" HorizontalAlignment="Left" IsHitTestVisible="False"/>
-            <Button Grid.Column="2" Classes="IconButton" Command="{Binding ShortcutsCommand}" Margin="0,0,6,0"
+            <Button Grid.Column="2" Classes="Ghost IconButton" Command="{Binding ShortcutsCommand}" Margin="0,0,6,0"
                     ToolTip.Tip="{l:T editor.shortcutsTip}" AutomationProperties.Name="{l:T editor.shortcuts}">
                 <l:Icon Glyph="E765" FontSize="14"/>
             </Button>
-            <Button Grid.Column="3" Classes="IconButton" Command="{Binding UndoCommand}" Margin="0,0,6,0"
+            <Button Grid.Column="3" Classes="Ghost IconButton" Command="{Binding UndoCommand}" Margin="0,0,6,0"
                     ToolTip.Tip="{l:T editor.undoTip}" AutomationProperties.Name="{l:T editor.undo}">
                 <l:Icon x:Name="UndoIcon" Glyph="E7A7" FontSize="13"/>
             </Button>
-            <Button Grid.Column="4" Classes="IconButton" Command="{Binding RedoCommand}" Margin="0,0,10,0"
+            <Button Grid.Column="4" Classes="Ghost IconButton" Command="{Binding RedoCommand}" Margin="0,0,10,0"
                     ToolTip.Tip="{l:T editor.redoTip}" AutomationProperties.Name="{l:T editor.redo}">
                 <l:Icon x:Name="RedoIcon" Glyph="E7A6" FontSize="13"/>
             </Button>
@@ -285,7 +285,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel x:Name="LeftGroup" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="PlayButton" Classes="IconButton" Click="OnPlay" AutomationProperties.Name="{l:T viewer.play}"
+                    <Button x:Name="PlayButton" Classes="Ghost IconButton" Click="OnPlay" AutomationProperties.Name="{l:T viewer.play}"
                             IsVisible="{Binding HasTimeline, Converter={StaticResource Truthy}}">
                         <l:Icon x:Name="PlayIcon" Glyph="F5B0" FontSize="13"/>
                     </Button>
@@ -336,11 +336,11 @@
                 </StackPanel>
 
                 <StackPanel x:Name="RightGroup" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Classes="IconButton" Command="{Binding SplitCommand}" Margin="0,0,6,0" ToolTip.Tip="{l:T editor.splitTip}"
+                    <Button Classes="Ghost IconButton" Command="{Binding SplitCommand}" Margin="0,0,6,0" ToolTip.Tip="{l:T editor.splitTip}"
                             AutomationProperties.Name="{l:T editor.split}" IsVisible="{Binding HasTimeline, Converter={StaticResource Truthy}}">
                         <l:Icon Glyph="E8C6" FontSize="14"/>
                     </Button>
-                    <Button Classes="IconButton" Command="{Binding DeleteCommand}" ToolTip.Tip="{l:T editor.deleteTip}"
+                    <Button Classes="Ghost IconButton" Command="{Binding DeleteCommand}" ToolTip.Tip="{l:T editor.deleteTip}"
                             AutomationProperties.Name="{l:T editor.delete}">
                         <l:Icon Glyph="E74D" FontSize="14"/>
                     </Button>
@@ -367,7 +367,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Classes="Icon" Text="{Binding PageGlyph}" FontSize="15" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                        <l:Icon Glyph="{Binding PageGlyph}" FontSize="15" VerticalAlignment="Center" Margin="0,0,9,0"/>
                         <TextBlock Grid.Column="1" Text="{Binding PageTitle}" FontSize="14.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         <TextBlock Grid.Column="2" Text="{Binding PageNote}" Classes="Caption" FontSize="12" Margin="9,0,0,0" VerticalAlignment="Center"
                                    TextTrimming="CharacterEllipsis"/>

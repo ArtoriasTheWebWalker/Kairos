@@ -22,6 +22,7 @@
     <Compile Include="$(WinTests)ClipTests.cs;$(WinTests)SettingsTests.cs;$(WinTests)LanguageTests.cs" />
     <Compile Include="$(WinTests)MeterBallisticsTests.cs;$(WinTests)UpdateRulesTests.cs;$(WinTests)VersionTests.cs;$(WinTests)NoteLengthTests.cs" />
     <Compile Include="$(WinTests)SharePlannerTests.cs;$(WinTests)SoundTempoTests.cs;$(WinTests)EditProjectTests.cs;$(WinTests)EditGraphTests.cs" />
+    <Compile Include="$(WinTests)EditExportTests.cs;$(WinTests)ClipCutterTests.cs;$(WinTests)FrameGrabberTests.cs;$(WinTests)ClipDeleteTests.cs;$(WinTests)ShareSettingsTests.cs;$(WinTests)InstallChoicesTests.cs" />
     <Compile Include="*.cs" />
     <None Include="$(WinTests)Fixtures\**\*" LinkBase="Fixtures" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

@@ -51,7 +51,7 @@ public partial class EditorView : UserControl
             };
         }
         _playback = new EditorPlayback(vm, SetPicture, ShowPlaying);
-        _playback.StillRead += OnStillRead;
+        Hook(_playback);
         vm.SaveAsked += AskSave;
         vm.PropertyChanged += OnCaptionsChanged;
         vm.PropertyChanged += (_, e) =>
@@ -99,6 +99,8 @@ public partial class EditorView : UserControl
 
     public EditorViewModel Model { get; }
 
+    static IBrush Find(string key) => Application.Current?.TryFindResource(key, out var found) == true && found is IBrush b ? b : Brushes.Gray;
+
     /// <summary>The shortcuts sheet's column: each group's heading, then a line per shortcut with its key caps.</summary>
     void FillShortcuts(StackPanel column, IReadOnlyList<ShortcutGroup> groups)
     {
@@ -109,7 +111,7 @@ public partial class EditorView : UserControl
                 Text = App.Text.Get(group.Title),
                 FontSize = 11.5,
                 FontWeight = FontWeight.SemiBold,
-                Foreground = (IBrush?)this.FindResource("Accent"),
+                Foreground = Find("Accent"),
                 Margin = new Thickness(0, 10, 0, 4),
             });
             foreach (var line in group.Lines)
@@ -130,7 +132,7 @@ public partial class EditorView : UserControl
                 row.Children.Add(new TextBlock { Text = App.Text.Get(line.Label), FontSize = 12.5, VerticalAlignment = VerticalAlignment.Center });
                 column.Children.Add(new Border
                 {
-                    BorderBrush = (IBrush?)this.FindResource("Stroke"),
+                    BorderBrush = Find("Stroke"),
                     BorderThickness = new Thickness(0, 0, 0, 1),
                     Child = row,
                 });
@@ -198,7 +200,13 @@ public partial class EditorView : UserControl
     public void Resume()
     {
         _playback = new EditorPlayback(Model, SetPicture, ShowPlaying);
-        _playback.StillRead += OnStillRead;
+        Hook(_playback);
+    }
+
+    void Hook(EditorPlayback playback)
+    {
+        playback.StillRead += OnStillRead;
+        playback.Frame += () => PreviewImage.InvalidateVisual();
     }
 
     /// <summary>Save was answered: a new copy (false) or in place of the original (true).</summary>
