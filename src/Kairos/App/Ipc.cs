@@ -122,7 +122,7 @@ public sealed class PipeServer : IDisposable
                 }
                 else if (request != null)
                 {
-                    if (_onRequest != null && GetNamedPipeClientProcessId(server.SafePipeHandle, out uint client))
+                    if (_onRequest != null && OperatingSystem.IsWindows() && GetNamedPipeClientProcessId(server.SafePipeHandle, out uint client))
                         _onRequest(request, (int)client);
                     await writer.WriteLineAsync(_handle(request));
                 }
