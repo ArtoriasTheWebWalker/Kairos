@@ -99,21 +99,15 @@ public sealed class CapturePipeline : IDisposable
         switch (_s.Capture.Mode)
         {
             case CaptureMode.Window:
-                using (var d = new ObsData()
-                           .Set("window", _s.Capture.Window).Set("priority", 2L).Set("method", 2L)
-                           .Set("cursor", _s.Capture.CaptureCursor).Set("client_area", true))
-                    AddToScene(CreateSource("window_capture", "Window", d), baseW, baseH);
+                AddToScene(CreateSource(CaptureBackend.Window(_s.Capture.Window, _s.Capture.CaptureCursor), "Window"), baseW, baseH);
                 break;
 
             case CaptureMode.Game:
-                if (_s.Capture.GameFallbackToScreen)
+                if (_s.Capture.GameFallbackToScreen || !CaptureBackend.HasGameCapture)
                     AddToScene(CreateMonitorSource(monitorId), baseW, baseH);
-                using (var d = new ObsData()
-                           .Set("capture_mode", "any_fullscreen").Set("capture_cursor", _s.Capture.CaptureCursor)
-                           .Set("anti_cheat_hook", true).Set("capture_overlays", false)
-                           .Set("capture_audio", _s.Audio.SourceAudioOnly))
+                if (CaptureBackend.HasGameCapture)
                 {
-                    IntPtr game = CreateSource("game_capture", "Game", d);
+                    IntPtr game = CreateSource(CaptureBackend.Game(_s.Capture.CaptureCursor, _s.Audio.SourceAudioOnly), "Game");
                     AddToScene(game, baseW, baseH);
                     if (_s.Audio.SourceAudioOnly)
                     {
@@ -133,11 +127,7 @@ public sealed class CapturePipeline : IDisposable
 
     IntPtr CreateMonitorSource(string monitorId)
     {
-        // Kairos records SDR (NV12, Rec. 709): with Force SDR Windows hands an HDR screen over already in SDR, where the
-        // HDR copy recorded black on some HDR monitors (a 4K HDR screen, DXGI, 2026-10-18).
-        using var d = new ObsData().Set("monitor_id", monitorId).Set("method", 0L).Set("capture_cursor", _s.Capture.CaptureCursor)
-            .Set("force_sdr", true);
-        return CreateSource("monitor_capture", "Screen", d);
+        return CreateSource(CaptureBackend.Screen(monitorId, _s.Capture.CaptureCursor), "Screen");
     }
 
     void BuildAudio()
@@ -156,8 +146,7 @@ public sealed class CapturePipeline : IDisposable
         }
         else if (a.System && !gameOnly)
         {
-            using var d = new ObsData().Set("device_id", a.SystemDevice);
-            IntPtr desktop = CreateSource("wasapi_output_capture", "Desktop audio", d);
+            IntPtr desktop = CreateSource(CaptureBackend.DesktopAudio(a.SystemDevice), "Desktop audio");
             _systemSource = desktop;
             ConfigureAudio(desktop, SystemMixers(), a.SystemVolume);
             AttachMeter(desktop, _systemLevel);
@@ -167,8 +156,7 @@ public sealed class CapturePipeline : IDisposable
         // Smart Save needs the microphone even when it is not recorded; then it joins no audio track.
         if (a.Mic || (_voice != null && _s.Voice.Enabled))
         {
-            using var d = new ObsData().Set("device_id", a.MicDevice);
-            IntPtr mic = CreateSource("wasapi_input_capture", "Microphone", d);
+            IntPtr mic = CreateSource(CaptureBackend.Microphone(a.MicDevice), "Microphone");
             ConfigureAudio(mic, a.Mic ? 1u | (a.SeparateTracks ? VoiceTrack : 0u) : 0u, a.MicVolume);
             AttachMeter(mic, _micLevel);
             Obs.obs_set_output_source(ChannelMic, mic);
@@ -218,12 +206,7 @@ public sealed class CapturePipeline : IDisposable
     /// <summary>Track 3's mixer: your voice.</summary>
     const uint VoiceTrack = 4u;
 
-    /// <summary>One app's own sound (its child processes' too), found by its exe whatever its window's title says.</summary>
-    IntPtr CreateAppAudio(string window, string name)
-    {
-        using var d = new ObsData().Set("window", window).Set("priority", 2L);
-        return CreateSource("wasapi_process_output_capture", name, d);
-    }
+    IntPtr CreateAppAudio(string window, string name) => CreateSource(CaptureBackend.AppAudio(window), name);
 
     static void ConfigureAudio(IntPtr source, uint mixers, double volume)
     {
@@ -300,6 +283,12 @@ public sealed class CapturePipeline : IDisposable
         Obs.obs_output_set_video_encoder(output, _videoEncoder);
         for (int i = 0; i < _audioEncoders.Count; i++)
             Obs.obs_output_set_audio_encoder(output, _audioEncoders[i], (nuint)i);
+    }
+
+    IntPtr CreateSource((string Id, ObsData Settings) backend, string name)
+    {
+        using var settings = backend.Settings;
+        return CreateSource(backend.Id, name, settings);
     }
 
     IntPtr CreateSource(string id, string name, ObsData settings)
@@ -388,7 +377,7 @@ public sealed class CapturePipeline : IDisposable
         Obs.FreeCallData(ref cd);
         _saving = false;
         if (path != null)
-            ReplaySaved?.Invoke(path.Replace('/', '\\'), quick);
+            ReplaySaved?.Invoke(path.Replace('/', Path.DirectorySeparatorChar), quick);
     }
 
     /// <summary>

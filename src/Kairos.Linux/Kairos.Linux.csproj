@@ -19,11 +19,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="$(WinSrc)Engine\**\*.cs" Exclude="$(WinSrc)Engine\SelfTest.cs;$(WinSrc)Engine\Share\PictureJpeg.cs;$(WinSrc)Engine\ScreenshotWriter.cs" LinkBase="Engine" />
+    <Compile Include="$(WinSrc)Engine\**\*.cs" Exclude="$(WinSrc)Engine\SelfTest.cs;$(WinSrc)Engine\Share\PictureJpeg.cs;$(WinSrc)Engine\ScreenshotWriter.cs;$(WinSrc)Engine\CaptureBackend.cs" LinkBase="Engine" />
     <Compile Include="$(WinSrc)Settings\**\*.cs;$(WinSrc)AppInfo.cs;$(WinSrc)InlineProgress.cs;$(WinSrc)App\Text.cs;$(WinSrc)App\HotkeyParser.cs;$(WinSrc)App\HotkeyDefaults.cs" />
     <Compile Include="$(WinSrc)Native\**\*.cs" LinkBase="Native" />
     <Compile Include="**\*.cs" Exclude="obj\**;bin\**" />
     <EmbeddedResource Include="$(WinSrc)App\Lang\*.json" LogicalName="Lang.%(Filename).json" />
+  </ItemGroup>
+
+  <!-- libobs finds its helper programs (obs-ffmpeg-mux saves clips, obs-nvenc-test probes NVENC) beside the executable. -->
+  <PropertyGroup>
+    <ObsPrefix Condition="'$(KAIROS_OBS_PREFIX)' != ''">$(KAIROS_OBS_PREFIX)</ObsPrefix>
+    <ObsPrefix Condition="'$(ObsPrefix)' == ''">$(HOME)/obs-prefix</ObsPrefix>
+  </PropertyGroup>
+  <ItemGroup Condition="Exists('$(ObsPrefix)/bin')">
+    <Content Include="$(ObsPrefix)/bin/*" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
